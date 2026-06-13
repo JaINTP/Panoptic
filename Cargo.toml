@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "crates/ui/panoptic-gui/src-tauri",
+    "crates/panoptic-core",
+    "crates/audio/panoptic-provider-linux",
+    "crates/audio/panoptic-provider-windows",
+    "crates/audio/panoptic-provider-web",
+    "crates/services/panoptic-server",
+    "crates/panoptic-cache",
+]
+resolver = "2"

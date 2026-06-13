@@ -1,0 +1,8 @@
+[package]
+name = "panoptic-cache"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dashmap = "5.5"
+uuid = { version = "1.8", features = ["v4", "fast-rng"] }

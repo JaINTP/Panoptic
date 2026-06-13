@@ -1,0 +1,15 @@
+[package]
+name = "panoptic-provider-windows"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+panoptic-core = { path = "../../panoptic-core" }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.56", features = [
+    "Media_Control",
+    "Foundation",
+    "Foundation_Collections",
+    "Storage_Streams"
+] }

@@ -1,0 +1,10 @@
+[package]
+name = "panoptic-provider-linux"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+panoptic-core = { path = "../../panoptic-core" }
+zbus = "4.0"
+futures-util = "0.3"
+tokio = { version = "1.36", features = ["sync"] }
