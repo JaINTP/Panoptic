@@ -5,6 +5,7 @@
 ## [0.1.1] - 2026-06-14
 
 ### Added
+
 - **Project README (`README.md`):** Comprehensive documentation covering architecture overview, installation (pre-built releases and building from source), Spotify PKCE authentication walkthrough, output templating placeholders, live overlay CSS theming, OBS integration guides (text file and browser source), HTTP API reference, development/testing commands, CI/CD release workflow, configuration file paths, and troubleshooting for Wayland and common issues.
 - **GitHub Actions Release Workflow (`.github/workflows/release.yml`):** Automated multi-platform release pipeline triggered on `v*` tag push (or manual dispatch). Builds Linux (`ubuntu-22.04`, AppImage/`.deb`) and Windows (`windows-latest`, NSIS `.exe`/`.msi`) in parallel using `tauri-apps/tauri-action`. Caches Cargo registry, build artifacts, and npm `node_modules` for fast rebuilds. Creates a draft GitHub Release with all bundled installers attached.
 - **Workspace & Crate Metadata:** Added `description`, `license`, `repository`, `homepage`, `authors`, `readme`, `keywords`, and `categories` fields to the root workspace `Cargo.toml` and all member crate manifests.
@@ -36,6 +37,7 @@
 - **Detailed CSS Variables:** Declared self-explanatory custom CSS variables (e.g. `--panoptic-overlay-card-background`, `--panoptic-overlay-album-art-width`, `--panoptic-overlay-track-title-text-color`) in `:root` of the default Live CSS template.
 
 ### Changed
+
 - **Linux MPRIS Metadata Parser:** Refactored `MprisMetadataParser` to extract property parsing into `parse_metadata_map`, separating DBus connection querying from parsing logic to enable unit testing.
 - **Dependencies:** Added `rand`, `sha2`, `base64`, and `reqwest` to `panoptic-gui/src-tauri/Cargo.toml`.
 - **Axum Callback handler:** Changed `spotify_callback` in `panoptic-server` to propagate the auth code via `AuthState::Authenticating` instead of using mock credentials.
@@ -48,10 +50,12 @@
 - **Arch Linux PKGBUILD:** Switched source to use local git repository (`git+file://`) via `git rev-parse --show-toplevel` to enable reliable local testing and building of uncommitted changes. Made `LICENSE` path installation robust to handle uncommitted workspace files.
 
 ### Removed
+
 - **Unused App Icons:** Removed Android and iOS application icon directories (`crates/ui/panoptic-gui/src-tauri/icons/android` and `crates/ui/panoptic-gui/src-tauri/icons/ios`), keeping only Windows (`.ico`) and Linux (`.png`/hicolor) assets.
 
 ### Fixed
-- **Docker Missing Windows Linker (`link.exe`):** Configured `build.py` to auto-install `cargo-xwin` inside the container (cached on the host via volume mount) and passed `--runner cargo-xwin` to the Tauri builder, ensuring the compiler toolchain is updated *before* installing `cargo-xwin` to satisfy its minimum rustc requirements (1.89+). Configured the build commands to pass `--no-bundle` when cross-compiling to the MSVC target, producing the `.exe` binary successfully while bypassing Windows installer packaging errors on non-Windows hosts.
+
+- **Docker Missing Windows Linker (`link.exe`):** Configured `build.py` to auto-install `cargo-xwin` inside the container (cached on the host via volume mount) and passed `--runner cargo-xwin` to the Tauri builder, ensuring the compiler toolchain is updated _before_ installing `cargo-xwin` to satisfy its minimum rustc requirements (1.89+). Configured the build commands to pass `--no-bundle` when cross-compiling to the MSVC target, producing the `.exe` binary successfully while bypassing Windows installer packaging errors on non-Windows hosts.
 - **Docker Missing Resource Compiler (`llvm-rc`):** Configured `build.py` to run `apt-get install -y llvm clang lld` inside the container to provide the necessary compiler tools and the `llvm-rc` binary required for compiling Windows resource files (`.rc`).
 - **Docker Compiler Version Mismatch:** Added `rustup update stable && rustup default stable` prior to compilation inside the container in `build.py` to upgrade the container's Rust version from 1.85.1 to the latest stable release and activate it as the default toolchain, satisfying Cargo.lock dependency requirements (e.g., `time` and `serde_with` requiring Rust 1.88.0+).
 - **Docker Compiler Target Error:** Integrated `rustup target add x86_64-pc-windows-msvc` into the container compile sequence in `build.py` to ensure the MSVC compilation target is available prior to launching the Tauri builder.
