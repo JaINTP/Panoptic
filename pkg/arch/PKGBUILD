@@ -1,0 +1,79 @@
+# Maintainer: jaintp <dev@jaintp.com>
+pkgname=panoptic-gui
+pkgver=0.1.1
+pkgrel=1
+pkgdesc="A modular, cross-platform streaming toolkit for overlays, data bridges, and live integrations"
+arch=('x86_64')
+url="https://github.com/JaINTP/Panoptic"
+license=('MIT')
+depends=(
+    'webkit2gtk-4.1'
+    'gtk3'
+    'libsoup3'
+    'libappindicator-gtk3'
+    'dbus'
+    'openssl'
+    'librsvg'
+)
+makedepends=(
+    'rust'
+    'cargo'
+    'nodejs'
+    'npm'
+    'patchelf'
+    'pkg-config'
+    'git'
+)
+source=("${pkgname}::git+file://$(git rev-parse --show-toplevel)")
+sha256sums=('SKIP')
+
+prepare() {
+    cd "${pkgname}/crates/ui/panoptic-gui"
+    npm ci
+}
+
+build() {
+    cd "${pkgname}/crates/ui/panoptic-gui"
+
+    export CARGO_TARGET_DIR="${srcdir}/target"
+
+    npx tauri build --no-bundle
+}
+
+package() {
+    cd "${pkgname}"
+
+    # Binary
+    install -Dm755 "${srcdir}/target/release/${pkgname}" \
+        "${pkgdir}/usr/bin/${pkgname}"
+
+    # Desktop entry
+    install -Dm644 /dev/stdin "${pkgdir}/usr/share/applications/${pkgname}.desktop" <<EOF
+[Desktop Entry]
+Name=Panoptic
+Comment=Streaming toolkit for overlays, data bridges, and live integrations
+Exec=${pkgname}
+Icon=${pkgname}
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Utility;
+StartupWMClass=${pkgname}
+EOF
+
+    # Icons
+    install -Dm644 crates/ui/panoptic-gui/src-tauri/icons/32x32.png \
+        "${pkgdir}/usr/share/icons/hicolor/32x32/apps/${pkgname}.png"
+    install -Dm644 crates/ui/panoptic-gui/src-tauri/icons/128x128.png \
+        "${pkgdir}/usr/share/icons/hicolor/128x128/apps/${pkgname}.png"
+    install -Dm644 crates/ui/panoptic-gui/src-tauri/icons/128x128@2x.png \
+        "${pkgdir}/usr/share/icons/hicolor/256x256/apps/${pkgname}.png"
+    install -Dm644 crates/ui/panoptic-gui/src-tauri/icons/icon.png \
+        "${pkgdir}/usr/share/icons/hicolor/512x512/apps/${pkgname}.png"
+
+    # License
+    if [ -f LICENSE ]; then
+        install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    else
+        install -Dm644 "${srcdir}/../../../LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    fi
+}

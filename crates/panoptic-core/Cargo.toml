@@ -1,7 +1,12 @@
 [package]
 name = "panoptic-core"
-version = "0.1.0"
-edition = "2021"
+description = "Shared models, traits, and types for the Panoptic media engine"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

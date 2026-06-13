@@ -9,3 +9,15 @@ members = [
     "crates/panoptic-cache",
 ]
 resolver = "2"
+
+[workspace.package]
+version = "0.1.1"
+authors = ["jaintp <dev@jaintp.com>"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/JaINTP/Panoptic"
+homepage = "https://github.com/JaINTP/Panoptic"
+readme = "README.md"
+description = "A modular, cross-platform streaming toolkit for overlays, data bridges, and live integrations"
+keywords = ["streaming", "overlay", "tauri", "obs", "toolkit"]
+categories = ["multimedia", "gui"]

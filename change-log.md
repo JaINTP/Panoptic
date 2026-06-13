@@ -1,8 +1,13 @@
 # Change Log
 
-## [Unreleased] - 2026-06-13
+## [Unreleased]
+
+## [0.1.1] - 2026-06-14
 
 ### Added
+- **Project README (`README.md`):** Comprehensive documentation covering architecture overview, installation (pre-built releases and building from source), Spotify PKCE authentication walkthrough, output templating placeholders, live overlay CSS theming, OBS integration guides (text file and browser source), HTTP API reference, development/testing commands, CI/CD release workflow, configuration file paths, and troubleshooting for Wayland and common issues.
+- **GitHub Actions Release Workflow (`.github/workflows/release.yml`):** Automated multi-platform release pipeline triggered on `v*` tag push (or manual dispatch). Builds Linux (`ubuntu-22.04`, AppImage/`.deb`) and Windows (`windows-latest`, NSIS `.exe`/`.msi`) in parallel using `tauri-apps/tauri-action`. Caches Cargo registry, build artifacts, and npm `node_modules` for fast rebuilds. Creates a draft GitHub Release with all bundled installers attached.
+- **Workspace & Crate Metadata:** Added `description`, `license`, `repository`, `homepage`, `authors`, `readme`, `keywords`, and `categories` fields to the root workspace `Cargo.toml` and all member crate manifests.
 - **Rust Backend Test Suite:** Added unit and integration tests across `panoptic-core` (playback state formatting), `panoptic-cache` (AssetCache idempotency and isolation), `panoptic-provider-linux` (refactored metadata parser and added mock tests), `panoptic-server` (auth callback error, success, missing parameters, and health checks), and `panoptic-gui` (AppSettings serialization and defaults).
 - **React Frontend Component Tests:** Integrated Vitest and React Testing Library in `crates/ui/panoptic-gui`. Wrote component rendering, navigation tab switching, and custom Client ID submission tests.
 - **Tauri Mock Testing Environment:** Created `setupTests.ts` and `vitest.config.ts` to mock Tauri's `@tauri-apps/api/core` and `@tauri-apps/api/event` interfaces, allowing React components to be tested in a headless JSDOM environment.
@@ -39,6 +44,11 @@
 - **Window Resizability & Limits:** Configured Tauri's main window to be resizable with a minimum width/height limit of `800x550` in `tauri.conf.json`.
 - **Fluid Layout & Scroll Containment:** Added styling for `#root` in `index.css` to prevent mounting containers from collapsing. Set `.content` to `overflow: hidden` globally, and added a `.view-pane-scrollable` class to standard settings views (storage, auth, output).
 - **Vertical Split Layout:** Redesigned the Live Overlay tab in `App.tsx` to stack components vertically (Live Preview on top, wide CSS Editor on the bottom), giving the code editor the full width of the pane.
+
+- **Arch Linux PKGBUILD:** Switched source to use local git repository (`git+file://`) via `git rev-parse --show-toplevel` to enable reliable local testing and building of uncommitted changes. Made `LICENSE` path installation robust to handle uncommitted workspace files.
+
+### Removed
+- **Unused App Icons:** Removed Android and iOS application icon directories (`crates/ui/panoptic-gui/src-tauri/icons/android` and `crates/ui/panoptic-gui/src-tauri/icons/ios`), keeping only Windows (`.ico`) and Linux (`.png`/hicolor) assets.
 
 ### Fixed
 - **Docker Missing Windows Linker (`link.exe`):** Configured `build.py` to auto-install `cargo-xwin` inside the container (cached on the host via volume mount) and passed `--runner cargo-xwin` to the Tauri builder, ensuring the compiler toolchain is updated *before* installing `cargo-xwin` to satisfy its minimum rustc requirements (1.89+). Configured the build commands to pass `--no-bundle` when cross-compiling to the MSVC target, producing the `.exe` binary successfully while bypassing Windows installer packaging errors on non-Windows hosts.
