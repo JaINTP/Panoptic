@@ -19,6 +19,13 @@ dist-ssr/
 # Tauri Backend
 src-tauri/target/
 
+# makepkg
+pkg/arch/pkg
+pkg/arch/src
+pkg/arch/panoptic-gui
+pkg/arch/*.tar.zst
+pkg/arch/*.pkg.tar.zst
+
 # OS / Editor
 .DS_Store
 .vscode/
