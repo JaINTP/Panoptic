@@ -63,9 +63,11 @@ impl EngineOrchestrator {
         let mut web_fallback = WebFallbackEngine::new(self.auth_rx.clone());
 
         let auth_tx = self.auth_tx.clone();
+        let settings_path = AppSettings::get_path(&app_handle);
         tokio::spawn(panoptic_server::start_server(
             self.state_rx.clone(),
             auth_tx,
+            settings_path,
         ));
 
         let code_verifier_store = std::sync::Arc::new(std::sync::Mutex::new(None::<String>));

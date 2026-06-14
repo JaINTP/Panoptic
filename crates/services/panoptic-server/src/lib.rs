@@ -1,6 +1,7 @@
 pub mod handlers {
     pub mod auth;
     pub mod health;
+    pub mod overlay;
     pub mod track;
 }
 pub mod router;
@@ -13,13 +14,19 @@ use tokio::sync::watch;
 pub struct AppState {
     pub auth_tx: watch::Sender<AuthState>,
     pub state_rx: watch::Receiver<PlaybackState>,
+    pub settings_path: Option<std::path::PathBuf>,
 }
 
 pub async fn start_server(
     state_rx: watch::Receiver<PlaybackState>,
     auth_tx: watch::Sender<AuthState>,
+    settings_path: Option<std::path::PathBuf>,
 ) {
-    let state = AppState { auth_tx, state_rx };
+    let state = AppState {
+        auth_tx,
+        state_rx,
+        settings_path,
+    };
     let app = AppRouter::build(state);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await

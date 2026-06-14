@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Panoptic Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/overlay/now-playing/style.css">
+  <style>
+    /* Default fallback and overlay settings */
+    body {
+      background-color: transparent;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="panoptic-overlay-wrapper" data-playing="false">
+    <div class="panoptic-overlay-card">
+      <div class="panoptic-overlay-art-container">
+        <img src="" alt="Album Art" class="panoptic-overlay-album-art" style="display: none;">
+      </div>
+      <div class="panoptic-overlay-text-container">
+        <div class="panoptic-overlay-track-title">Not Playing</div>
+        <div class="panoptic-overlay-track-artist">Unknown Artist</div>
+        <div class="panoptic-overlay-track-album">Unknown Album</div>
+        <div class="panoptic-overlay-progress-section">
+          <div class="panoptic-overlay-progress-container">
+            <div class="panoptic-overlay-progress-bar" style="width: 0%;"></div>
+          </div>
+          <div class="panoptic-overlay-time-display">
+            <span class="panoptic-overlay-time-current">0:00</span>
+            <span class="panoptic-overlay-time-separator">/</span>
+            <span class="panoptic-overlay-time-duration">0:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isPlaying = false;
+    let progressMs = 0;
+    let durationMs = 0;
+    let lastUpdate = Date.now();
+
+    function formatTime(ms) {
+      if (!ms || isNaN(ms) || ms < 0) return '0:00';
+      const totSecs = Math.floor(ms / 1000);
+      const h = Math.floor(totSecs / 3600);
+      const m = Math.floor((totSecs % 3600) / 60);
+      const s = totSecs % 60;
+      const pad = (n) => n.toString().padStart(2, '0');
+      if (h > 0) {
+        return `${h}:${pad(m)}:${pad(s)}`;
+      }
+      return `${m}:${pad(s)}`;
+    }
+
+    function updateDOM(state) {
+      const wrapper = document.querySelector('.panoptic-overlay-wrapper');
+      const art = document.querySelector('.panoptic-overlay-album-art');
+      const title = document.querySelector('.panoptic-overlay-track-title');
+      const artist = document.querySelector('.panoptic-overlay-track-artist');
+      const album = document.querySelector('.panoptic-overlay-track-album');
+      const duration = document.querySelector('.panoptic-overlay-time-duration');
+
+      if (!state || !state.title) {
+        wrapper.setAttribute('data-playing', 'false');
+        title.textContent = 'Not Playing';
+        artist.textContent = 'Unknown Artist';
+        album.textContent = 'Unknown Album';
+        duration.textContent = '0:00';
+        art.style.display = 'none';
+        isPlaying = false;
+        progressMs = 0;
+        durationMs = 0;
+        updateProgressDOM();
+        return;
+      }
+
+      wrapper.setAttribute('data-playing', state.is_playing ? 'true' : 'false');
+      
+      if (state.art_source) {
+        art.src = state.art_source;
+        art.style.display = 'block';
+      } else {
+        art.style.display = 'none';
+      }
+
+      title.textContent = state.title;
+      artist.textContent = state.artist || 'Unknown Artist';
+      album.textContent = state.album || 'Unknown Album';
+      duration.textContent = formatTime(state.duration_ms);
+
+      isPlaying = state.is_playing;
+      progressMs = state.progress_ms;
+      durationMs = state.duration_ms;
+      lastUpdate = Date.now();
+
+      updateProgressDOM();
+    }
+
+    function updateProgressDOM() {
+      let currentProgress = progressMs;
+      if (isPlaying) {
+        const elapsed = Date.now() - lastUpdate;
+        currentProgress = Math.min(progressMs + elapsed, durationMs);
+      }
+
+      const percent = durationMs > 0 ? (currentProgress / durationMs) * 100 : 0;
+      
+      const bar = document.querySelector('.panoptic-overlay-progress-bar');
+      const current = document.querySelector('.panoptic-overlay-time-current');
+
+      if (bar) bar.style.width = percent + '%';
+      if (current) current.textContent = formatTime(currentProgress);
+    }
+
+    async function poll() {
+      try {
+        const response = await fetch('/playback');
+        if (response.ok) {
+          const state = await response.json();
+          updateDOM(state);
+        }
+      } catch (err) {
+        console.error('Error fetching playback state:', err);
+      }
+    }
+
+    // Poll every second
+    setInterval(poll, 1000);
+    poll();
+
+    // Interpolate progress bar for smooth animation (~30fps)
+    setInterval(updateProgressDOM, 33);
+  </script>
+</body>
+</html>

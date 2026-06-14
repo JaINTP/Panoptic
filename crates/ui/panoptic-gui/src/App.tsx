@@ -826,7 +826,7 @@ function App() {
     <div className="app-container">
       <style id="panoptic-live-custom-css">{cssCode}</style>
       <nav className="sidebar">
-        <div className="sidebar-title">PANOPTIC v0.1.2</div>
+        <div className="sidebar-title">PANOPTIC v0.1.3</div>
         <a href="#" className={`sidebar-item ${activeView === 'display' ? 'active' : ''}`} onClick={() => setActiveView('display')}>
           <Monitor size={18} /> Live Overlay
         </a>

@@ -202,7 +202,13 @@ pub fn run() {
                             if let Ok(mut lock) = update_status_task.0.lock() {
                                 *lock = Some(release.clone());
                             }
-                            if let Ok(update_i) = MenuItem::with_id(&app_handle_update, "update", format!("Update Available ({})", release.tag_name), true, None::<&str>) {
+                            if let Ok(update_i) = MenuItem::with_id(
+                                &app_handle_update,
+                                "update",
+                                format!("Update Available ({})", release.tag_name),
+                                true,
+                                None::<&str>,
+                            ) {
                                 let _ = menu_clone.prepend(&update_i);
                             }
 

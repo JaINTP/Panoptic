@@ -227,14 +227,18 @@ Custom themes are provided in the [`examples/now-playing/`](examples/now-playing
 
 ### OBS Integration
 
-**Text file source (simplest):**
-1. Add a **Text (GDI+)** source in OBS.
-2. Check "Read from file" and point it to `~/.config/panoptic/current_track.txt`.
-3. The text updates automatically every second.
+**Browser source (full styled overlay - recommended):**
+1. Add a new **Browser** source in OBS.
+2. In the **URL** field, enter: **`http://127.0.0.1:3000/overlay/now-playing`**
+3. Set the width and height to match your desired overlay size (e.g., Width: `500`, Height: `200` depending on your card styling).
+4. *(Optional)* Clear any default CSS inside OBS's custom CSS box if you want to use the stylesheet directly from Panoptic's Live Overlay editor. The overlay pulls its stylesheet dynamically from Panoptic.
 
-**Browser source (full overlay):**
-1. Point a Browser Source at the overlay URL served by Panoptic's local server.
-2. Style with your custom CSS from the Live Overlay editor.
+**Text file source (simple plain text):**
+1. Add a **Text (GDI+)** source in OBS.
+2. Check **Read from file** and point it to:
+   * Linux: `~/.config/panoptic/current_track.txt`
+   * Windows: `%USERPROFILE%\.config\panoptic\current_track.txt`
+3. The text updates automatically every second based on your output template.
 
 ## Configuration
 
@@ -264,6 +268,9 @@ Panoptic runs a local Axum server on **`http://127.0.0.1:3000`**:
 
 | Endpoint | Method | Response | Description |
 |----------|--------|----------|-------------|
+| `/overlay/now-playing` | `GET` | `text/html` | HTML template representing the OBS/browser overlay page |
+| `/overlay/now-playing/style.css` | `GET` | `text/css` | Dynamic stylesheet containing your custom CSS |
+| `/playback` | `GET` | `application/json` | JSON structure representing full playback metadata |
 | `/current-track` | `GET` | `text/plain` | Formatted track string from the output template |
 | `/health` | `GET` | `200 OK` | Server health check |
 | `/callback` | `GET` | Redirect | Spotify OAuth PKCE redirect handler (internal) |

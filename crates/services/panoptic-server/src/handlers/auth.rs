@@ -35,7 +35,11 @@ mod tests {
     async fn test_spotify_callback_success() {
         let (auth_tx, mut auth_rx) = watch::channel(AuthState::Unauthenticated);
         let (_state_tx, state_rx) = watch::channel(PlaybackState::default());
-        let app_state = crate::AppState { auth_tx, state_rx };
+        let app_state = crate::AppState {
+            auth_tx,
+            state_rx,
+            settings_path: None,
+        };
 
         let mut params = HashMap::new();
         params.insert("code".to_string(), "test_auth_code_123".to_string());
@@ -63,7 +67,11 @@ mod tests {
     async fn test_spotify_callback_error() {
         let (auth_tx, mut auth_rx) = watch::channel(AuthState::Unauthenticated);
         let (_state_tx, state_rx) = watch::channel(PlaybackState::default());
-        let app_state = crate::AppState { auth_tx, state_rx };
+        let app_state = crate::AppState {
+            auth_tx,
+            state_rx,
+            settings_path: None,
+        };
 
         let mut params = HashMap::new();
         params.insert("error".to_string(), "access_denied".to_string());
@@ -88,7 +96,11 @@ mod tests {
     async fn test_spotify_callback_missing_params() {
         let (auth_tx, mut auth_rx) = watch::channel(AuthState::Unauthenticated);
         let (_state_tx, state_rx) = watch::channel(PlaybackState::default());
-        let app_state = crate::AppState { auth_tx, state_rx };
+        let app_state = crate::AppState {
+            auth_tx,
+            state_rx,
+            settings_path: None,
+        };
 
         let params = HashMap::new();
 

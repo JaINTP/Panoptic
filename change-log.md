@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-14
+
+### Added
+
+- **Web Browser & OBS Overlay Support:** Added routes to the local Axum server (`http://127.0.0.1:3000`) to expose a web-based, styled stream overlay:
+  - `/overlay/now-playing`: Serves the HTML overlay page containing real-time DOM updates and smooth 33ms progress-bar interpolation.
+  - `/overlay/now-playing/style.css`: Serves the user's custom CSS stylesheet defined in the settings panel, falling back to the default stylesheet if empty.
+  - `/playback`: Serves the complete current playback state as JSON for web-based widgets.
+- **CORS Support:** Integrated permissive CORS handling to ensure the backend is fully accessible by external OBS browser sources.
+
 ## [0.1.2] - 2026-06-14
 
 ### Added
