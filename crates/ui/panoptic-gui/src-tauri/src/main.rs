@@ -10,5 +10,5 @@ fn main() {
         }
     }
 
-    panoptic_gui_lib::run()
+    panoptic_lib::run()
 }

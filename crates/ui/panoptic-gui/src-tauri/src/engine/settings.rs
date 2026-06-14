@@ -9,6 +9,7 @@ pub struct AppSettings {
     pub access_token: Option<String>,
     pub refresh_token: Option<String>,
     pub template: Option<String>,
+    pub css: Option<String>,
 }
 
 impl AppSettings {
@@ -61,6 +62,7 @@ mod tests {
             access_token: Some("my-access-token".to_string()),
             refresh_token: Some("my-refresh-token".to_string()),
             template: Some("Now Playing: {title}".to_string()),
+            css: Some("body { color: red; }".to_string()),
         };
 
         let json = serde_json::to_string(&settings).unwrap();
@@ -70,6 +72,7 @@ mod tests {
         assert_eq!(decoded.access_token, Some("my-access-token".to_string()));
         assert_eq!(decoded.refresh_token, Some("my-refresh-token".to_string()));
         assert_eq!(decoded.template, Some("Now Playing: {title}".to_string()));
+        assert_eq!(decoded.css, Some("body { color: red; }".to_string()));
     }
 
     #[test]
@@ -79,5 +82,6 @@ mod tests {
         assert!(settings.access_token.is_none());
         assert!(settings.refresh_token.is_none());
         assert!(settings.template.is_none());
+        assert!(settings.css.is_none());
     }
 }

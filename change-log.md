@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-14
+
+### Added
+
+- **GitHub Update Checker:** Implemented background checking for newer releases via the GitHub API, notifying the user both in the system tray menu and through a banner in the React UI sidebar. Clicking the tray item or the UI banner opens the release page in the default web browser.
+- **CodeMirror CSS Editor Improvements:** Integrated autocompletion for custom Panoptic variables and classes, syntax error linting/diagnostics, and line gutters into the live CSS editor.
+- **Time Formatting Placeholders:** Added comprehensive human-readable time formatting placeholders to output templates:
+  - `{progress}` / `{duration}` for smart formatted strings (e.g., `3:04` or `1:01:05`).
+  - `{progress_h}`, `{progress_m}`, `{progress_s}` (and raw/total/padded variants) for individual time components.
+- **Interactive Placeholder Guide:** Reorganized the Output tab guide in `App.tsx` into clear, visually distinct categories (Metadata, Formatted Time, and Detailed Time Components) and made all placeholders clickable for instant cursor insertion into the template editor.
+- **Custom CSS Overlay Examples:** Created an `examples/now-playing/` directory containing:
+  - `now-playing-default.css`: The default modular card configuration.
+  - `spinning-vinyl.css`: A premium circular disc theme featuring a spinning record animation (clockwise or widdershins) with a centered, blurred text information overlay and a static outer progress bar ring.
+
+### Changed
+- **Application Binary & Package Rename:** Renamed the compiled application binary and packages from `panoptic-gui` to `panoptic` in `tauri.conf.json`, Cargo metadata, packaging configuration, and documentation. Updated the Tauri application identifier from `com.jaintp.panoptic-gui` to `com.jaintp.panoptic`.
+
+### Fixed
+- **App Icon Integration:** Set the system tray icon to load the default window icon in [`lib.rs`](file:///home/jaintp/git/repos/Panoptic/crates/ui/panoptic-gui/src-tauri/src/lib.rs). Regenerated all platform-specific icon sizes (e.g. 32x32, 128x128, etc.) from the custom high-res `icon.png` using the Tauri CLI, ensuring the desktop entry and taskbar display the custom icon instead of fallback Tauri logos.
+- **Settings Persistence Edge Cases:** Modified the output template and custom overlay CSS persistence storage structure to support empty/blank inputs correctly between application runs.
+- **CI/CD Build Runner:** Added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"` to GitHub Actions environment to resolve Node.js 20 deprecation warnings and force actions to execute on Node.js 24.
+
 ## [0.1.1] - 2026-06-14
 
 ### Added

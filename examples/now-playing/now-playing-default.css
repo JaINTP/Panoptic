@@ -1,0 +1,141 @@
+/* Default Now Playing CSS Theme for Panoptic */
+:root {
+  /* Card Layout & Background */
+  --panoptic-overlay-card-display: flex;
+  --panoptic-overlay-card-gap: 20px;
+  --panoptic-overlay-card-background: rgba(19, 21, 28, 0.75);
+  --panoptic-overlay-card-border-style: solid;
+  --panoptic-overlay-card-border-width: 1px;
+  --panoptic-overlay-card-border-color: rgba(255, 255, 255, 0.08);
+  --panoptic-overlay-card-backdrop-blur: 16px;
+  --panoptic-overlay-card-padding: 20px;
+  --panoptic-overlay-card-border-radius: 16px;
+  --panoptic-overlay-card-width: 380px;
+  --panoptic-overlay-card-box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  
+  /* Album Art Image */
+  --panoptic-overlay-album-art-width: 90px;
+  --panoptic-overlay-album-art-height: 90px;
+  --panoptic-overlay-album-art-border-radius: 10px;
+  --panoptic-overlay-album-art-object-fit: cover;
+  --panoptic-overlay-album-art-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  
+  /* Song Title Typography */
+  --panoptic-overlay-track-title-font-family: 'Outfit', sans-serif;
+  --panoptic-overlay-track-title-font-size: 17px;
+  --panoptic-overlay-track-title-font-weight: 700;
+  --panoptic-overlay-track-title-text-color: #ffffff;
+  
+  /* Artist Name Typography */
+  --panoptic-overlay-track-artist-font-size: 13.5px;
+  --panoptic-overlay-track-artist-font-weight: 600;
+  --panoptic-overlay-track-artist-text-color: var(--accent-primary);
+  
+  /* Album Name Typography */
+  --panoptic-overlay-track-album-font-size: 11px;
+  --panoptic-overlay-track-album-text-color: var(--text-muted);
+  --panoptic-overlay-track-album-letter-spacing: 0.05em;
+  
+  /* Progress Bar Styling */
+  --panoptic-overlay-progress-bar-height: 5px;
+  --panoptic-overlay-progress-bar-background: rgba(255, 255, 255, 0.08);
+  --panoptic-overlay-progress-bar-border-radius: 3px;
+  --panoptic-overlay-progress-bar-fill-gradient: linear-gradient(90deg, var(--accent-primary) 0%, #a78bfa 100%);
+  
+  /* Time Display Typography */
+  --panoptic-overlay-time-display-font-family: 'JetBrains Mono', monospace;
+  --panoptic-overlay-time-display-font-size: 10.5px;
+  --panoptic-overlay-time-display-text-color: var(--text-secondary);
+}
+
+.panoptic-overlay-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.panoptic-overlay-card {
+  display: var(--panoptic-overlay-card-display);
+  gap: var(--panoptic-overlay-card-gap);
+  background: var(--panoptic-overlay-card-background);
+  border: var(--panoptic-overlay-card-border-width) var(--panoptic-overlay-card-border-style) var(--panoptic-overlay-card-border-color);
+  backdrop-filter: blur(var(--panoptic-overlay-card-backdrop-blur));
+  padding: var(--panoptic-overlay-card-padding);
+  border-radius: var(--panoptic-overlay-card-border-radius);
+  width: var(--panoptic-overlay-card-width);
+  box-shadow: var(--panoptic-overlay-card-box-shadow);
+  transition: all 0.3s ease;
+}
+
+.panoptic-overlay-album-art {
+  width: var(--panoptic-overlay-album-art-width);
+  height: var(--panoptic-overlay-album-art-height);
+  border-radius: var(--panoptic-overlay-album-art-border-radius);
+  object-fit: var(--panoptic-overlay-album-art-object-fit);
+  box-shadow: var(--panoptic-overlay-album-art-box-shadow);
+}
+
+.panoptic-overlay-text-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.panoptic-overlay-track-title {
+  font-family: var(--panoptic-overlay-track-title-font-family);
+  font-size: var(--panoptic-overlay-track-title-font-size);
+  font-weight: var(--panoptic-overlay-track-title-font-weight);
+  color: var(--panoptic-overlay-track-title-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.panoptic-overlay-track-artist {
+  font-size: var(--panoptic-overlay-track-artist-font-size);
+  font-weight: var(--panoptic-overlay-track-artist-font-weight);
+  color: var(--panoptic-overlay-track-artist-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.panoptic-overlay-track-album {
+  font-size: var(--panoptic-overlay-track-album-font-size);
+  color: var(--panoptic-overlay-track-album-text-color);
+  letter-spacing: var(--panoptic-overlay-track-album-letter-spacing);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.panoptic-overlay-progress-container {
+  width: 100%;
+  height: var(--panoptic-overlay-progress-bar-height);
+  background: var(--panoptic-overlay-progress-bar-background);
+  border-radius: var(--panoptic-overlay-progress-bar-border-radius);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.panoptic-overlay-progress-bar {
+  height: 100%;
+  background: var(--panoptic-overlay-progress-bar-fill-gradient);
+  border-radius: var(--panoptic-overlay-progress-bar-border-radius);
+}
+
+.panoptic-overlay-time-display {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--panoptic-overlay-time-display-font-family);
+  font-size: var(--panoptic-overlay-time-display-font-size);
+  color: var(--panoptic-overlay-time-display-text-color);
+}

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "panoptic-gui",
-  "version": "0.1.1",
-  "identifier": "com.jaintp.panoptic-gui",
+  "productName": "panoptic",
+  "version": "0.1.2",
+  "identifier": "com.jaintp.panoptic",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:1420",

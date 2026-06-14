@@ -87,7 +87,7 @@ cd pkg/arch
 makepkg -si
 ```
 
-This builds from the release tarball, installs the binary to `/usr/bin/panoptic-gui`, registers a `.desktop` entry, and places icons into the hicolor theme.
+This builds from the release tarball, installs the binary to `/usr/bin/panoptic`, registers a `.desktop` entry, and places icons into the hicolor theme.
 
 ### Building from Source
 
@@ -178,13 +178,31 @@ To unlink, click **Unlink Spotify** - this clears the stored tokens immediately.
 
 Navigate to the **Output** tab and customise the format string. Available placeholders:
 
-| Placeholder | Description |
-|-------------|-------------|
-| `{title}` | Track title |
-| `{artist}` | Artist name |
-| `{album}` | Album name |
-| `{progress_ms}` | Current position in milliseconds |
-| `{duration_ms}` | Total duration in milliseconds |
+| Placeholder | Description | Example / Range |
+|-------------|-------------|-----------------|
+| `{title}` | Track title | `Resonance` |
+| `{artist}` | Artist name | `Home` |
+| `{album}` | Album name | `Odyssey` |
+| `{progress}` | Smart progress (formatted) | `3:04` or `1:05:04` |
+| `{duration}` | Smart duration (formatted) | `4:12` or `1:05:20` |
+| `{progress_h}` | Progress hours (unpadded) | `0` or `1` |
+| `{progress_m}` | Progress minutes of current hour (padded) | `00` - `59` |
+| `{progress_s}` | Progress seconds of current minute (padded) | `00` - `59` |
+| `{progress_m_raw}` | Progress minutes of current hour (unpadded) | `0` - `59` |
+| `{progress_s_raw}` | Progress seconds of current minute (unpadded) | `0` - `59` |
+| `{progress_m_total}` | Total progress minutes (unpadded) | `65` |
+| `{progress_m_total_padded}` | Total progress minutes (padded) | `05` or `65` |
+| `{progress_s_total}` | Total progress seconds (unpadded) | `3909` |
+| `{progress_ms}` | Progress in milliseconds (raw) | `165000` |
+| `{duration_h}` | Duration hours (unpadded) | `0` or `1` |
+| `{duration_m}` | Duration minutes of current hour (padded) | `00` - `59` |
+| `{duration_s}` | Duration seconds of current minute (padded) | `00` - `59` |
+| `{duration_m_raw}` | Duration minutes of current hour (unpadded) | `0` - `59` |
+| `{duration_s_raw}` | Duration seconds of current minute (unpadded) | `0` - `59` |
+| `{duration_m_total}` | Total duration minutes (unpadded) | `65` |
+| `{duration_m_total_padded}` | Total duration minutes (padded) | `05` or `65` |
+| `{duration_s_total}` | Total duration seconds (unpadded) | `3909` |
+| `{duration_ms}` | Duration in milliseconds (raw) | `210000` |
 
 **Default template:** `Now Playing: {title} by {artist}`
 
@@ -201,6 +219,10 @@ The **Live Overlay** tab provides a real-time preview of the "Now Playing" card 
 --panoptic-overlay-album-art-width
 --panoptic-overlay-track-title-text-color
 ```
+
+Custom themes are provided in the [`examples/now-playing/`](examples/now-playing/) directory:
+- [`now-playing-default.css`](examples/now-playing/now-playing-default.css) - Standard modern card layout.
+- [`spinning-vinyl.css`](examples/now-playing/spinning-vinyl.css) - Premium circular disc style with spinning animation (customisable clockwise or widdershins) and static outer progress bar ring.
 
 ### OBS Integration
 
@@ -219,8 +241,8 @@ Settings are stored in your platform's standard config directory:
 
 | Platform | Path |
 |----------|------|
-| **Linux** | `~/.config/com.jaintp.panoptic-gui/settings.json` |
-| **Windows** | `%APPDATA%\com.jaintp.panoptic-gui\settings.json` |
+| **Linux** | `~/.config/com.jaintp.panoptic/settings.json` |
+| **Windows** | `%APPDATA%\com.jaintp.panoptic\settings.json` |
 
 The JSON file contains:
 

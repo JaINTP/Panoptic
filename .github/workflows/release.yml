@@ -18,6 +18,7 @@ env:
   # Pin Node and Rust versions for reproducibility
   NODE_VERSION: "22"
   RUST_VERSION: "stable"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   build:

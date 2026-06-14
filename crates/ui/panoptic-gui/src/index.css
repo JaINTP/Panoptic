@@ -320,3 +320,24 @@ button {
   width: 100%;
   background: radial-gradient(circle at center, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
 }
+
+/* Placeholder Item Hover Effect */
+.placeholder-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  transition: all 0.15s ease;
+  user-select: none;
+  text-align: left;
+}
+
+.placeholder-item:hover {
+  background-color: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-1px);
+}

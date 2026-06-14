@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import CodeMirror from '@uiw/react-codemirror';
+import { css, cssLanguage } from '@codemirror/lang-css';
+import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
+import { syntaxTree } from '@codemirror/language';
+import { CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { 
   HardDrive, 
   ShieldCheck, 
@@ -29,6 +35,121 @@ const formatTime = (ms: number) => {
   const secs = totalSecs % 60;
   return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 };
+
+const PANOPTIC_CLASSES = [
+  { label: '.panoptic-overlay-wrapper', type: 'class', detail: 'Overlay container wrapper' },
+  { label: '.panoptic-overlay-card', type: 'class', detail: 'The main display card / vinyl disc' },
+  { label: '.panoptic-overlay-art-container', type: 'class', detail: 'Art container wrapper' },
+  { label: '.panoptic-overlay-album-art', type: 'class', detail: 'Album artwork image element' },
+  { label: '.panoptic-overlay-text-container', type: 'class', detail: 'Info text overlay container' },
+  { label: '.panoptic-overlay-track-title', type: 'class', detail: 'Track title text' },
+  { label: '.panoptic-overlay-track-artist', type: 'class', detail: 'Track artist text' },
+  { label: '.panoptic-overlay-track-album', type: 'class', detail: 'Track album name text' },
+  { label: '.panoptic-overlay-progress-section', type: 'class', detail: 'Progress bar section wrapper' },
+  { label: '.panoptic-overlay-progress-container', type: 'class', detail: 'Progress bar background track' },
+  { label: '.panoptic-overlay-progress-bar', type: 'class', detail: 'Active progress bar fill' },
+  { label: '.panoptic-overlay-time-display', type: 'class', detail: 'Time elapsed display container' },
+  { label: '.panoptic-overlay-time-separator', type: 'class', detail: 'Time separator element' }
+];
+
+const PANOPTIC_VARS = [
+  // General layout properties
+  { label: '--panoptic-overlay-card-display', type: 'variable', detail: 'flex | block | grid' },
+  { label: '--panoptic-overlay-card-gap', type: 'variable', detail: 'Gap size (e.g. 20px)' },
+  { label: '--panoptic-overlay-card-background', type: 'variable', detail: 'Card bg (e.g. rgba(19, 21, 28, 0.75))' },
+  { label: '--panoptic-overlay-card-border-style', type: 'variable', detail: 'solid | none | dashed' },
+  { label: '--panoptic-overlay-card-border-width', type: 'variable', detail: 'Border width (e.g. 1px)' },
+  { label: '--panoptic-overlay-card-border-color', type: 'variable', detail: 'Border color' },
+  { label: '--panoptic-overlay-card-backdrop-blur', type: 'variable', detail: 'Backdrop blur (e.g. 16px)' },
+  { label: '--panoptic-overlay-card-padding', type: 'variable', detail: 'Card padding' },
+  { label: '--panoptic-overlay-card-border-radius', type: 'variable', detail: 'Corner radius (e.g. 16px)' },
+  { label: '--panoptic-overlay-card-width', type: 'variable', detail: 'Card width (e.g. 380px)' },
+  { label: '--panoptic-overlay-card-box-shadow', type: 'variable', detail: 'Card box shadow' },
+
+  // Album Art variables
+  { label: '--panoptic-overlay-album-art-width', type: 'variable', detail: 'Art width' },
+  { label: '--panoptic-overlay-album-art-height', type: 'variable', detail: 'Art height' },
+  { label: '--panoptic-overlay-album-art-border-radius', type: 'variable', detail: 'Corner radius' },
+  { label: '--panoptic-overlay-album-art-object-fit', type: 'variable', detail: 'cover | contain | fill' },
+  { label: '--panoptic-overlay-album-art-box-shadow', type: 'variable', detail: 'Art box shadow' },
+
+  // Typography - Title
+  { label: '--panoptic-overlay-track-title-font-family', type: 'variable', detail: 'Font family' },
+  { label: '--panoptic-overlay-track-title-font-size', type: 'variable', detail: 'Font size' },
+  { label: '--panoptic-overlay-track-title-font-weight', type: 'variable', detail: 'Font weight' },
+  { label: '--panoptic-overlay-track-title-text-color', type: 'variable', detail: 'Title color' },
+
+  // Typography - Artist
+  { label: '--panoptic-overlay-track-artist-font-family', type: 'variable', detail: 'Font family' },
+  { label: '--panoptic-overlay-track-artist-font-size', type: 'variable', detail: 'Font size' },
+  { label: '--panoptic-overlay-track-artist-font-weight', type: 'variable', detail: 'Font weight' },
+  { label: '--panoptic-overlay-track-artist-text-color', type: 'variable', detail: 'Artist color' },
+
+  // Typography - Album
+  { label: '--panoptic-overlay-track-album-font-family', type: 'variable', detail: 'Font family' },
+  { label: '--panoptic-overlay-track-album-font-size', type: 'variable', detail: 'Font size' },
+  { label: '--panoptic-overlay-track-album-font-weight', type: 'variable', detail: 'Font weight' },
+  { label: '--panoptic-overlay-track-album-text-color', type: 'variable', detail: 'Album color' },
+  { label: '--panoptic-overlay-track-album-letter-spacing', type: 'variable', detail: 'Letter spacing' },
+
+  // Progress Bar
+  { label: '--panoptic-overlay-progress-bar-height', type: 'variable', detail: 'Bar height' },
+  { label: '--panoptic-overlay-progress-bar-background', type: 'variable', detail: 'Track color' },
+  { label: '--panoptic-overlay-progress-bar-border-radius', type: 'variable', detail: 'Corner radius' },
+  { label: '--panoptic-overlay-progress-bar-fill-gradient', type: 'variable', detail: 'Fill color/gradient' },
+
+  // Time Display
+  { label: '--panoptic-overlay-time-display-font-family', type: 'variable', detail: 'Font family' },
+  { label: '--panoptic-overlay-time-display-font-size', type: 'variable', detail: 'Font size' },
+  { label: '--panoptic-overlay-time-display-text-color', type: 'variable', detail: 'Time color' },
+
+  // Vinyl Theme specific
+  { label: '--vinyl-size', type: 'variable', detail: 'Spinning vinyl size (e.g. 320px)' },
+  { label: '--ring-width', type: 'variable', detail: 'Outer progress ring width (e.g. 4px)' },
+  { label: '--accent-glow', type: 'variable', detail: 'Glow drop-shadow color' },
+  { label: '--overlay-bg', type: 'variable', detail: 'Text background radial gradient center' }
+];
+
+function panopticCssAutocomplete(context: CompletionContext): CompletionResult | null {
+  const classWord = context.matchBefore(/\.[a-zA-Z0-9_-]*/);
+  if (classWord) {
+    if (classWord.from === classWord.to && !context.explicit) return null;
+    return {
+      from: classWord.from,
+      options: PANOPTIC_CLASSES
+    };
+  }
+
+  const varWord = context.matchBefore(/-[a-zA-Z0-9_-]*/);
+  if (varWord) {
+    if (varWord.from === varWord.to && !context.explicit) return null;
+    return {
+      from: varWord.from,
+      options: PANOPTIC_VARS
+    };
+  }
+
+  return null;
+}
+
+const customCompletionExtension = cssLanguage.data.of({
+  autocomplete: panopticCssAutocomplete
+});
+
+const cssSyntaxLinter = linter((view) => {
+  const diagnostics: Diagnostic[] = [];
+  syntaxTree(view.state).cursor().iterate((node) => {
+    if (node.type.isError) {
+      diagnostics.push({
+        from: node.from,
+        to: node.to,
+        severity: 'error',
+        message: 'CSS syntax error'
+      });
+    }
+  });
+  return diagnostics;
+});
 
 function App() {
   const [activeView, setActiveView] = useState<View>('display');
@@ -190,6 +311,8 @@ function App() {
 
   const [displayProgressMs, setDisplayProgressMs] = useState<number>(165000);
   const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [updateUrl, setUpdateUrl] = useState<string | null>(null);
 
   // Load initial settings on mount
   useEffect(() => {
@@ -199,15 +322,35 @@ function App() {
         setClientId(id);
         const status = await invoke<boolean>('get_spotify_status');
         setSpotifyAuth(status);
-        const savedTemplate = await invoke<string>('get_output_template');
-        if (savedTemplate) {
+        const savedTemplate = await invoke<string | null>('get_output_template');
+        if (savedTemplate !== null) {
           setTemplate(savedTemplate);
+        }
+        const savedCss = await invoke<string | null>('get_overlay_css');
+        if (savedCss !== null) {
+          setCssCode(savedCss);
+        }
+        const updateStatus = await invoke<any>('get_update_status');
+        if (updateStatus) {
+          setUpdateVersion(updateStatus.tag_name);
+          setUpdateUrl(updateStatus.html_url);
         }
       } catch (e) {
         console.error('Failed to load settings:', e);
       }
     };
     loadSettings();
+  }, []);
+
+  // Listen for update_available event
+  useEffect(() => {
+    const unlisten = listen<any>('update_available', (event) => {
+      setUpdateVersion(event.payload.tag_name);
+      setUpdateUrl(event.payload.html_url);
+    });
+    return () => {
+      unlisten.then(f => f());
+    };
   }, []);
 
   // Listen for native authentication success
@@ -250,6 +393,16 @@ function App() {
     ? (displayProgressMs / playback.duration_ms) * 100
     : 0;
 
+
+  const handleOpenUpdate = async () => {
+    if (updateUrl) {
+      try {
+        await openUrl(updateUrl);
+      } catch (e) {
+        console.error('Failed to open update link:', e);
+      }
+    }
+  };
 
   const handleSaveClientId = async () => {
     try {
@@ -336,20 +489,33 @@ function App() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               <h1 className="view-title" style={{ marginBottom: '8px', fontSize: '18px' }}>CSS Stylesheet</h1>
               <div className="section" style={{ flex: 1, display: 'flex', flexDirection: 'column', margin: 0, minHeight: 0 }}>
-                <textarea 
-                  className="code-editor"
+                <CodeMirror
                   value={cssCode}
-                  onChange={(e) => setCssCode(e.target.value)}
+                  height="100%"
+                  extensions={[
+                    css(),
+                    customCompletionExtension,
+                    cssSyntaxLinter,
+                    lintGutter()
+                  ]}
+                  onChange={(value) => {
+                    setCssCode(value);
+                    invoke('set_overlay_css', { css: value }).catch(err => 
+                      console.error('Failed to save CSS:', err)
+                    );
+                  }}
+                  theme="dark"
                   style={{ 
                     flex: 1, 
-                    width: '100%', 
-                    resize: 'none', 
+                    width: '100%',
                     fontSize: '12.5px', 
-                    lineHeight: '1.5',
                     fontFamily: "'JetBrains Mono', monospace",
-                    minHeight: '150px'
+                    minHeight: '150px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    overflow: 'hidden',
+                    textAlign: 'left'
                   }}
-                  spellCheck={false}
                 />
               </div>
             </div>
@@ -429,12 +595,106 @@ function App() {
           </div>
         );
       case 'output': {
+        const getFormatTime = (ms: number) => {
+          if (isNaN(ms) || ms <= 0) return '0:00';
+          const totalSecs = Math.floor(ms / 1000);
+          const hours = Math.floor(totalSecs / 3600);
+          const mins = Math.floor((totalSecs % 3600) / 60);
+          const secs = totalSecs % 60;
+          const pad = (num: number) => num.toString().padStart(2, '0');
+          if (hours > 0) {
+            return `${hours}:${pad(mins)}:${pad(secs)}`;
+          }
+          return `${mins}:${pad(secs)}`;
+        };
+
+        const getComponents = (ms: number) => {
+          const totalSecs = Math.floor((ms || 0) / 1000);
+          const h = Math.floor(totalSecs / 3600);
+          const m = Math.floor((totalSecs % 3600) / 60);
+          const s = totalSecs % 60;
+          const mTotal = Math.floor(totalSecs / 60);
+          const pad = (num: number) => num.toString().padStart(2, '0');
+          return {
+            h: h.toString(),
+            m: pad(m),
+            s: pad(s),
+            mRaw: m.toString(),
+            sRaw: s.toString(),
+            mTotal: mTotal.toString(),
+            mTotalPadded: pad(mTotal),
+            sTotal: totalSecs.toString(),
+          };
+        };
+
+        const pComp = getComponents(playback.progress_ms);
+        const dComp = getComponents(playback.duration_ms);
+        const pFormatted = getFormatTime(playback.progress_ms);
+        const dFormatted = getFormatTime(playback.duration_ms);
+
         const formattedOutput = template
           .replace(/{title}/g, playback.title || '')
           .replace(/{artist}/g, playback.artist || '')
           .replace(/{album}/g, playback.album || '')
           .replace(/{progress_ms}/g, String(playback.progress_ms || 0))
-          .replace(/{duration_ms}/g, String(playback.duration_ms || 0));
+          .replace(/{duration_ms}/g, String(playback.duration_ms || 0))
+          .replace(/{progress}/g, pFormatted)
+          .replace(/{duration}/g, dFormatted)
+          .replace(/{progress_h}/g, pComp.h)
+          .replace(/{progress_m}/g, pComp.m)
+          .replace(/{progress_s}/g, pComp.s)
+          .replace(/{progress_m_raw}/g, pComp.mRaw)
+          .replace(/{progress_s_raw}/g, pComp.sRaw)
+          .replace(/{progress_m_total}/g, pComp.mTotal)
+          .replace(/{progress_m_total_padded}/g, pComp.mTotalPadded)
+          .replace(/{progress_s_total}/g, pComp.sTotal)
+          .replace(/{duration_h}/g, dComp.h)
+          .replace(/{duration_m}/g, dComp.m)
+          .replace(/{duration_s}/g, dComp.s)
+          .replace(/{duration_m_raw}/g, dComp.mRaw)
+          .replace(/{duration_s_raw}/g, dComp.sRaw)
+          .replace(/{duration_m_total}/g, dComp.mTotal)
+          .replace(/{duration_m_total_padded}/g, dComp.mTotalPadded)
+          .replace(/{duration_s_total}/g, dComp.sTotal);
+
+        const insertPlaceholder = (placeholder: string) => {
+          const textarea = document.querySelector('.code-editor') as HTMLTextAreaElement;
+          if (textarea) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const before = text.substring(0, start);
+            const after = text.substring(end, text.length);
+            const newVal = before + placeholder + after;
+            setTemplate(newVal);
+            invoke('set_output_template', { template: newVal }).catch(err => 
+              console.error('Failed to save template:', err)
+            );
+            setTimeout(() => {
+              textarea.focus();
+              textarea.selectionStart = textarea.selectionEnd = start + placeholder.length;
+            }, 0);
+          } else {
+            const newVal = template + placeholder;
+            setTemplate(newVal);
+            invoke('set_output_template', { template: newVal }).catch(err => 
+              console.error('Failed to save template:', err)
+            );
+          }
+        };
+
+        const renderPlaceholderItem = (code: string, label: string) => {
+          return (
+            <div 
+              className="placeholder-item" 
+              onClick={() => insertPlaceholder(code)}
+              title="Click to insert at cursor"
+            >
+              <code style={{ color: 'var(--accent-primary-hover)', fontFamily: 'monospace', fontSize: '12.5px', fontWeight: '600' }}>{code}</code>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{label}</span>
+            </div>
+          );
+        };
 
         return (
           <div className="view-pane view-pane-scrollable">
@@ -455,35 +715,86 @@ function App() {
               />
             </div>
             <div className="section" style={{ marginBottom: '16px' }}>
-              <h2 className="section-title">Available Placeholders</h2>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
-                gap: '12px', 
-                padding: '12px 16px', 
-                borderRadius: '6px', 
-                border: '1px solid var(--border)', 
-                backgroundColor: 'rgba(0, 0, 0, 0.15)' 
-              }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <code style={{ color: 'var(--accent-primary-hover)', fontFamily: 'monospace', fontSize: '12.5px', fontWeight: '600' }}>{'{title}'}</code>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Track Title</span>
+              <h2 className="section-title">Available Placeholders (Click to Insert)</h2>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Metadata</h3>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+                    gap: '12px', 
+                    padding: '12px 16px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--border)', 
+                    backgroundColor: 'rgba(0, 0, 0, 0.15)' 
+                  }}>
+                    {renderPlaceholderItem('{title}', 'Track Title')}
+                    {renderPlaceholderItem('{artist}', 'Artist Name(s)')}
+                    {renderPlaceholderItem('{album}', 'Album Name')}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <code style={{ color: 'var(--accent-primary-hover)', fontFamily: 'monospace', fontSize: '12.5px', fontWeight: '600' }}>{'{artist}'}</code>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Artist Name(s)</span>
+
+                <div>
+                  <h3 style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Formatted Time (Recommended)</h3>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+                    gap: '12px', 
+                    padding: '12px 16px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--border)', 
+                    backgroundColor: 'rgba(0, 0, 0, 0.15)' 
+                  }}>
+                    {renderPlaceholderItem('{progress}', 'Smart Progress (e.g. 3:04)')}
+                    {renderPlaceholderItem('{duration}', 'Smart Duration (e.g. 4:12)')}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <code style={{ color: 'var(--accent-primary-hover)', fontFamily: 'monospace', fontSize: '12.5px', fontWeight: '600' }}>{'{album}'}</code>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Album Name</span>
+
+                <div>
+                  <h3 style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Detailed Time (Progress)</h3>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', 
+                    gap: '12px', 
+                    padding: '12px 16px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--border)', 
+                    backgroundColor: 'rgba(0, 0, 0, 0.15)' 
+                  }}>
+                    {renderPlaceholderItem('{progress_h}', 'Hours (unpadded)')}
+                    {renderPlaceholderItem('{progress_m}', 'Mins of hour (padded)')}
+                    {renderPlaceholderItem('{progress_s}', 'Secs of min (padded)')}
+                    {renderPlaceholderItem('{progress_m_raw}', 'Mins of hour (unpadded)')}
+                    {renderPlaceholderItem('{progress_s_raw}', 'Secs of min (unpadded)')}
+                    {renderPlaceholderItem('{progress_m_total}', 'Total minutes (unpadded)')}
+                    {renderPlaceholderItem('{progress_m_total_padded}', 'Total minutes (padded)')}
+                    {renderPlaceholderItem('{progress_s_total}', 'Total seconds (unpadded)')}
+                    {renderPlaceholderItem('{progress_ms}', 'Progress in milliseconds')}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <code style={{ color: 'var(--accent-primary-hover)', fontFamily: 'monospace', fontSize: '12.5px', fontWeight: '600' }}>{'{progress_ms}'}</code>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Progress (ms)</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <code style={{ color: 'var(--accent-primary-hover)', fontFamily: 'monospace', fontSize: '12.5px', fontWeight: '600' }}>{'{duration_ms}'}</code>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Duration (ms)</span>
+
+                <div>
+                  <h3 style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Detailed Time (Duration)</h3>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', 
+                    gap: '12px', 
+                    padding: '12px 16px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--border)', 
+                    backgroundColor: 'rgba(0, 0, 0, 0.15)' 
+                  }}>
+                    {renderPlaceholderItem('{duration_h}', 'Hours (unpadded)')}
+                    {renderPlaceholderItem('{duration_m}', 'Mins of hour (padded)')}
+                    {renderPlaceholderItem('{duration_s}', 'Secs of min (padded)')}
+                    {renderPlaceholderItem('{duration_m_raw}', 'Mins of hour (unpadded)')}
+                    {renderPlaceholderItem('{duration_s_raw}', 'Secs of min (unpadded)')}
+                    {renderPlaceholderItem('{duration_m_total}', 'Total minutes (unpadded)')}
+                    {renderPlaceholderItem('{duration_m_total_padded}', 'Total minutes (padded)')}
+                    {renderPlaceholderItem('{duration_s_total}', 'Total seconds (unpadded)')}
+                    {renderPlaceholderItem('{duration_ms}', 'Duration in milliseconds')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -515,7 +826,7 @@ function App() {
     <div className="app-container">
       <style id="panoptic-live-custom-css">{cssCode}</style>
       <nav className="sidebar">
-        <div className="sidebar-title">PANOPTIC v0.1.1</div>
+        <div className="sidebar-title">PANOPTIC v0.1.2</div>
         <a href="#" className={`sidebar-item ${activeView === 'display' ? 'active' : ''}`} onClick={() => setActiveView('display')}>
           <Monitor size={18} /> Live Overlay
         </a>
@@ -528,6 +839,35 @@ function App() {
         <a href="#" className={`sidebar-item ${activeView === 'output' ? 'active' : ''}`} onClick={() => setActiveView('output')}>
           <Type size={18} /> Output
         </a>
+        {updateVersion && (
+          <div 
+            onClick={handleOpenUpdate}
+            style={{
+              margin: 'auto 14px 14px 14px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(167, 139, 250, 0.08) 100%)',
+              border: '1px solid rgba(139, 92, 246, 0.35)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+              transition: 'all 0.2s ease',
+              textAlign: 'left'
+            }}
+          >
+            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Update Available
+            </span>
+            <span style={{ fontSize: '12.5px', fontWeight: '600', color: '#ffffff' }}>
+              Version {updateVersion}
+            </span>
+            <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+              Click to view release
+            </span>
+          </div>
+        )}
       </nav>
       <main className="content">
         {renderView()}

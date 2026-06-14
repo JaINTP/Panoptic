@@ -1,0 +1,225 @@
+/* Spinning Vinyl / CD Circular Now Playing Theme for Panoptic */
+:root {
+  --vinyl-size: 320px;
+  --ring-width: 4px;
+  --accent-primary: #8b5cf6;
+  --accent-glow: rgba(139, 92, 246, 0.4);
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  --overlay-bg: rgba(6, 7, 10, 0.65);
+}
+
+/* Center the overlay card in the viewport */
+.panoptic-overlay-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Transform the main card into a circular Vinyl disc */
+.panoptic-overlay-card {
+  position: relative;
+  width: var(--vinyl-size);
+  height: var(--vinyl-size);
+  border-radius: 50%;
+  overflow: hidden;
+  background: #090a0f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 0 0 4px rgba(255, 255, 255, 0.03),
+    0 20px 40px rgba(0, 0, 0, 0.6),
+    inset 0 0 60px rgba(0, 0, 0, 0.9);
+  padding: 0; /* Reset default padding */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Container for the album art, taking up the full disc area */
+.panoptic-overlay-art-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Album Art styled as a spinning vinyl record */
+.panoptic-overlay-album-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  
+  /* ------------------------------------------------------------- */
+  /* ANIMATION: Choose spin directions by switching the name:      */
+  /* - spin-clockwise (standard)                                  */
+  /* - spin-widdershins (counter-clockwise)                       */
+  /* ------------------------------------------------------------- */
+  animation: spin-clockwise 25s linear infinite;
+  
+  /* Adds a subtle vinyl texture overlay */
+  filter: contrast(1.05) brightness(0.9);
+}
+
+/* Pause the spin animation when the player is paused */
+.panoptic-overlay-wrapper[data-playing="false"] .panoptic-overlay-album-art {
+  animation-play-state: paused;
+}
+
+/* Text Container overlaid directly over the spinning art */
+.panoptic-overlay-text-container {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, var(--overlay-bg) 80%);
+  backdrop-filter: blur(4px);
+  padding: 30px;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* Text overlay components */
+.panoptic-overlay-track-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  margin-bottom: 4px;
+  width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panoptic-overlay-track-artist {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  margin-bottom: 2px;
+  width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panoptic-overlay-track-album {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  width: 80%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Progress bar wrapper section - positioned relative to the full circle */
+.panoptic-overlay-progress-section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* The circular progress container - static track ring around the disc edge */
+.panoptic-overlay-progress-container {
+  position: absolute;
+  top: var(--ring-width);
+  left: var(--ring-width);
+  right: var(--ring-width);
+  bottom: var(--ring-width);
+  border-radius: 50%;
+  border: var(--ring-width) solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  height: auto; /* Reset horizontal bar height */
+  margin: 0;
+  overflow: visible; /* Let inner elements absolute position outside if needed */
+}
+
+/* The progress filler bar - styled as a clipping mask using the X% width */
+.panoptic-overlay-progress-bar {
+  /* Inherits width: X% inline from React */
+  position: absolute;
+  top: calc(-1 * var(--ring-width));
+  left: calc(-1 * var(--ring-width));
+  bottom: calc(-1 * var(--ring-width));
+  overflow: hidden;
+  background: transparent;
+  border-radius: 0; /* Reset horizontal bar radius */
+  height: auto; /* Allow fill */
+}
+
+/* The actual colored ring drawn inside the clipping container. 
+   Using a fixed dimensions matching the vinyl size. */
+.panoptic-overlay-progress-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--vinyl-size) - 2 * var(--ring-width));
+  height: calc(var(--vinyl-size) - 2 * var(--ring-width));
+  border-radius: 50%;
+  border: var(--ring-width) solid var(--accent-primary);
+  box-sizing: border-box;
+  
+  /* Make the active progress ring pop and glow */
+  filter: drop-shadow(0 0 3px var(--accent-glow));
+}
+
+/* Center-bottom time elapsed display */
+.panoptic-overlay-time-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  margin-top: 8px;
+}
+
+.panoptic-overlay-time-separator {
+  opacity: 0.5;
+}
+
+/* Spinning Keyframe Animations */
+@keyframes spin-clockwise {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-widdershins {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
