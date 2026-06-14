@@ -22,7 +22,7 @@ src-tauri/target/
 # makepkg
 pkg/arch/pkg
 pkg/arch/src
-pkg/arch/panoptic-gui
+pkg/arch/panoptic
 pkg/arch/*.tar.zst
 pkg/arch/*.pkg.tar.zst
 

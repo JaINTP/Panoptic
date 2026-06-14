@@ -17,12 +17,15 @@
   - `spinning-vinyl.css`: A premium circular disc theme featuring a spinning record animation (clockwise or widdershins) with a centered, blurred text information overlay and a static outer progress bar ring.
 
 ### Changed
+
 - **Application Binary & Package Rename:** Renamed the compiled application binary and packages from `panoptic-gui` to `panoptic` in `tauri.conf.json`, Cargo metadata, packaging configuration, and documentation. Updated the Tauri application identifier from `com.jaintp.panoptic-gui` to `com.jaintp.panoptic`.
 
 ### Fixed
+
 - **App Icon Integration:** Set the system tray icon to load the default window icon in [`lib.rs`](file:///home/jaintp/git/repos/Panoptic/crates/ui/panoptic-gui/src-tauri/src/lib.rs). Regenerated all platform-specific icon sizes (e.g. 32x32, 128x128, etc.) from the custom high-res `icon.png` using the Tauri CLI, ensuring the desktop entry and taskbar display the custom icon instead of fallback Tauri logos.
 - **Settings Persistence Edge Cases:** Modified the output template and custom overlay CSS persistence storage structure to support empty/blank inputs correctly between application runs.
 - **CI/CD Build Runner:** Added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"` to GitHub Actions environment to resolve Node.js 20 deprecation warnings and force actions to execute on Node.js 24.
+- **README Badges & License:** Fixed the broken dynamic GitHub license badge by replacing it with a robust, static MIT badge, and added a Discord invite button linking to the `jaintp-dev` server.
 
 ## [0.1.1] - 2026-06-14
 

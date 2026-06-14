@@ -9,7 +9,8 @@
 <p align="center">
   <a href="https://github.com/JaINTP/Panoptic/releases"><img alt="Release" src="https://img.shields.io/github/v/release/JaINTP/Panoptic?style=flat-square&color=8b5cf6" /></a>
   <a href="https://github.com/JaINTP/Panoptic/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/JaINTP/Panoptic/release.yml?style=flat-square&label=release" /></a>
-  <img alt="License" src="https://img.shields.io/github/license/JaINTP/Panoptic?style=flat-square" />
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-8b5cf6?style=flat-square" /></a>
+  <a href="https://discord.gg/psBjVfq663"><img alt="Discord" src="https://img.shields.io/badge/discord-join-7289da?style=flat-square&logo=discord" /></a>
   <img alt="Platform" src="https://img.shields.io/badge/platform-linux%20%7C%20windows-0d9488?style=flat-square" />
 </p>
 
