@@ -16,319 +16,134 @@
 
 ---
 
-Panoptic is a lightweight, always-on desktop toolkit that provides modular streaming utilities - starting with a **Now Playing** engine that captures real-time media metadata and pipes it to OBS overlays, status bars, and external integrations. It runs in the system tray, stays out of your way, and is designed to grow with additional tools over time.
+Panoptic is a lightweight, always-on desktop toolkit that provides modular streaming utilities. Designed for high performance and deep customisability, Panoptic captures real-time data from media players and streaming platforms, piping it to styled OBS overlays, status bars, and custom integrations.
 
 ## Features
 
-- **Native Media Detection** - reads directly from **MPRIS/D-Bus** on Linux and **SMTC (System Media Transport Controls)** on Windows. Zero browser extensions, zero polling hacks.
-- **Spotify Web API Fallback** - when native providers can't reach the player (e.g. Spotify on web), Panoptic falls back to the Spotify Web API with automatic **PKCE authentication** and **token refresh**.
-- **Live Overlay Preview** - a built-in, fully styleable "Now Playing" card with album art, track title, artist, and an interpolated progress bar (∼33 fps, jitter-free).
-- **Custom CSS Theming** - edit the overlay stylesheet in a side-by-side editor with instant live preview. Every element uses descriptive `panoptic-overlay-*` class names and CSS variables for maximum control.
-- **Output Templating** - define a format string (e.g. `Now Playing: {title} by {artist}`) and Panoptic writes the rendered result to `~/.config/panoptic/current_track.txt` every second, ready for OBS text sources.
-- **HTTP API** - a local Axum server on `http://127.0.0.1:3000` exposes:
-  - `GET /current-track` - formatted track string (plain text)
-  - `GET /health` - health check
-  - `GET /callback` - Spotify OAuth redirect handler
-- **System Tray Integration** - minimises to tray on close. Right-click for Settings or Quit. The engine keeps running in the background.
-- **Cross-Platform Builds** - ships as AppImage/`.deb` on Linux and NSIS `.exe`/`.msi` on Windows via automated GitHub Actions releases.
+### 🔌 Modular Plugin Architecture
+Panoptic is built on a compile-time plugin system. Every major feature (Spotify, Native Media, Twitch Alerts) is a self-contained module with its own:
+- **Backend Logic:** Setup/Teardown hooks and background tasks.
+- **HTTP Routing:** Custom Axum endpoints for OBS browser sources.
+- **Dynamic UI:** Auto-generated configuration forms in the settings panel.
+
+### 🎮 Advanced Twitch Integration
+Full support for real-time Twitch events via EventSub WebSocket:
+- **Twitch Hype Train:** Track progress levels, total contributions, and a dynamic top-contributor leaderboard.
+- **Stream Alerts:** High-fidelity notifications for **Follows**, **Subscriptions**, **Gift Subs**, **Raids**, and **Cheers**.
+- **Alert Stacking:** Multiple alerts can stack vertically. When an old alert expires, the remaining ones "drop" into place with a professional bouncing animation.
+- **Lifecycle Management:** Customisable alert duration and a "Keep Last Alert" mode to ensure your stream always has a visual anchor.
+
+### 🎨 High-Fidelity Theming
+- **Live CSS Editor:** Side-by-side workspace with a real-time preview. Styles are injected instantly as you type.
+- **Sticky Previews:** The preview container stays fixed at the top while you scroll through settings, ensuring you always see the visual impact of your changes.
+- **Master Theme Library:** Ships with three complete aesthetic packs:
+    - **Cyber-Neon:** High-contrast pink/cyan with scanlines and glitch effects.
+    - **Eldritch Horror:** Dark void purples with organic "breathing" animations.
+    - **1990s RPG:** Classic 16-bit console UI with pixel-perfect borders and "Royal Blue" skins.
+
+### 🎵 Core Media Engine
+- **Native Detection:** Reads from **MPRIS** (Linux) and **SMTC** (Windows) with zero browser extensions.
+- **Spotify Fallback:** Automatic PKCE authentication and token refresh for Spotify Web API.
+- **Output Templating:** Render track info to local text files for OBS Text Sources or any external dashboard.
+
+---
 
 ## Architecture
 
-Panoptic is a **Tauri 2** application (React + Vite frontend, Rust backend) structured as a Cargo workspace with a modular crate layout designed for adding new tools alongside the existing media engine:
+Panoptic is a **Tauri 2** application (React + Vite frontend, Rust backend) using a modular crate layout:
 
 ```
 Panoptic/
 ├── crates/
-│   ├── panoptic-core/          # Shared models (PlaybackState, AuthState) & MediaProvider trait
-│   ├── panoptic-cache/         # Thread-safe asset cache (DashMap + UUID)
-│   ├── audio/
-│   │   ├── panoptic-provider-linux/    # MPRIS/D-Bus via zbus
-│   │   ├── panoptic-provider-windows/  # SMTC via windows-rs
-│   │   └── panoptic-provider-web/      # Spotify Web API fallback
+│   ├── panoptic-core/          # Core traits (PanopticPlugin, MediaProvider) & Shared Models
+│   ├── panoptic-cache/         # Thread-safe asset & state cache
+│   ├── audio/                  # Media providers (Linux, Windows, Spotify Web)
 │   ├── services/
-│   │   └── panoptic-server/    # Axum HTTP server (track endpoint, OAuth callback, health)
+│   │   └── panoptic-server/    # Axum HTTP server for OBS Browser Sources
 │   └── ui/
-│       └── panoptic-gui/       # Tauri app
-│           ├── src/            # React frontend (Vite + TypeScript)
-│           └── src-tauri/      # Rust backend (engine orchestrator, PKCE, settings)
-├── build.py                    # Multi-platform build automation script
-├── change-log.md
-└── .github/workflows/
-    └── release.yml             # CI/CD: build & publish releases
+│       └── panoptic-gui/       # Main Tauri Application
 ```
 
-### Engine Orchestrator
+### Plugin System
 
-The core loop in [`orchestrator.rs`](crates/ui/panoptic-gui/src-tauri/src/engine/orchestrator.rs) runs a priority chain every second:
+Every feature in Panoptic implements the `PanopticPlugin` trait. This trait allows plugins to hook into the application lifecycle and provide UI definitions.
 
-1. **Native provider** - attempt MPRIS (Linux) or SMTC (Windows) fetch
-2. **Web fallback** - if native fails, poll Spotify Web API
-3. **Token refresh** - on `401 Unauthorized`, automatically refresh the access token via PKCE
-4. **Template render** - apply the user's output template to the `PlaybackState`
-5. **File write** - persist to `~/.config/panoptic/current_track.txt`
-6. **Event emit** - push `playback_update` Tauri event to the React frontend
+```rust
+pub trait PanopticPlugin: Send + Sync {
+    fn id(&self) -> &'static str;
+    fn name(&self) -> &'static str;
 
-## Installation
+    // Logic setup (runs on app start)
+    fn setup(&self, app: &tauri::AppHandle) -> Result<(), String>;
 
-### Pre-built Releases (Recommended)
+    // Define custom HTTP routes for overlays
+    fn register_routes(&self, router: Router<AppState>) -> Router<AppState>;
 
-Download the latest installer for your platform from the [Releases](https://github.com/JaINTP/Panoptic/releases) page:
+    // Define UI fields (auto-generates the Settings UI)
+    fn settings_definition(&self) -> Option<PluginSettingsDefinition>;
 
-| Platform | Artifact | Notes |
-|----------|----------|-------|
-| **Linux** | `.AppImage`, `.deb` | AppImage is portable, `.deb` for Debian/Ubuntu |
-| **Windows** | `.exe` (NSIS installer), `.msi` | NSIS installer is recommended |
-
-### Arch Linux (PKGBUILD)
-
-A [`PKGBUILD`](pkg/arch/PKGBUILD) is included for Arch Linux users:
-
-```bash
-cd pkg/arch
-makepkg -si
-```
-
-This builds from the release tarball, installs the binary to `/usr/bin/panoptic`, registers a `.desktop` entry, and places icons into the hicolor theme.
-
-### Building from Source
-
-#### Prerequisites
-
-- **Rust** ≥ 1.88 (stable)
-- **Node.js** ≥ 22
-- **npm** (bundled with Node.js)
-
-##### Linux-specific
-
-```bash
-# Debian/Ubuntu
-sudo apt-get install -y \
-  libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
-  patchelf libdbus-1-dev pkg-config libssl-dev \
-  libgtk-3-dev libsoup-3.0-dev javascriptcoregtk-4.1
-
-# Arch Linux
-sudo pacman -S webkit2gtk-4.1 libappindicator-gtk3 librsvg \
-  patchelf dbus openssl gtk3 libsoup3
-```
-
-##### Windows-specific
-
-- Visual Studio Build Tools with the **C++ desktop development** workload
-- [NSIS](https://nsis.sourceforge.io/) (for bundled installers)
-
-#### Build Steps
-
-```bash
-# Clone
-git clone https://github.com/JaINTP/Panoptic.git
-cd Panoptic
-
-# Install frontend dependencies
-cd crates/ui/panoptic-gui
-npm install
-
-# Development mode (hot-reload)
-npx tauri dev
-
-# Production build (native platform)
-npx tauri build
-```
-
-#### Using the Build Script
-
-The included [`build.py`](build.py) automates multi-platform builds:
-
-```bash
-# Build for Linux only
-python build.py --linux
-
-# Build for Linux with bundled installers (AppImage, .deb)
-python build.py --linux --bundle
-
-# Build for Windows (cross-compile via cargo-xwin on Linux host)
-python build.py --windows --win-method local
-
-# Build for Windows via Docker container
-python build.py --windows --win-method docker --bundle
-
-# Build everything
-python build.py --all --bundle
-```
-
-## Usage
-
-### First Launch
-
-1. Launch Panoptic - it starts in the system tray.
-2. Right-click the tray icon → **Settings** to open the configuration window.
-
-### Spotify Authentication
-
-Panoptic uses **PKCE (Proof Key for Code Exchange)** - no client secret is stored or shipped.
-
-1. Open **Settings** → **Auth** tab.
-2. *(Optional)* Enter your own Spotify **Client ID** if you prefer to use your own app registration. A default ID is provided for convenience.
-3. Click **Link Spotify** - your browser opens the Spotify authorization page.
-4. Approve the permissions - you're redirected back to `http://127.0.0.1:3000/callback` and the token exchange completes automatically.
-5. The auth status indicator turns green when linked.
-
-To unlink, click **Unlink Spotify** - this clears the stored tokens immediately.
-
-### Output Template
-
-Navigate to the **Output** tab and customise the format string. Available placeholders:
-
-| Placeholder | Description | Example / Range |
-|-------------|-------------|-----------------|
-| `{title}` | Track title | `Resonance` |
-| `{artist}` | Artist name | `Home` |
-| `{album}` | Album name | `Odyssey` |
-| `{progress}` | Smart progress (formatted) | `3:04` or `1:05:04` |
-| `{duration}` | Smart duration (formatted) | `4:12` or `1:05:20` |
-| `{progress_h}` | Progress hours (unpadded) | `0` or `1` |
-| `{progress_m}` | Progress minutes of current hour (padded) | `00` - `59` |
-| `{progress_s}` | Progress seconds of current minute (padded) | `00` - `59` |
-| `{progress_m_raw}` | Progress minutes of current hour (unpadded) | `0` - `59` |
-| `{progress_s_raw}` | Progress seconds of current minute (unpadded) | `0` - `59` |
-| `{progress_m_total}` | Total progress minutes (unpadded) | `65` |
-| `{progress_m_total_padded}` | Total progress minutes (padded) | `05` or `65` |
-| `{progress_s_total}` | Total progress seconds (unpadded) | `3909` |
-| `{progress_ms}` | Progress in milliseconds (raw) | `165000` |
-| `{duration_h}` | Duration hours (unpadded) | `0` or `1` |
-| `{duration_m}` | Duration minutes of current hour (padded) | `00` - `59` |
-| `{duration_s}` | Duration seconds of current minute (padded) | `00` - `59` |
-| `{duration_m_raw}` | Duration minutes of current hour (unpadded) | `0` - `59` |
-| `{duration_s_raw}` | Duration seconds of current minute (unpadded) | `0` - `59` |
-| `{duration_m_total}` | Total duration minutes (unpadded) | `65` |
-| `{duration_m_total_padded}` | Total duration minutes (padded) | `05` or `65` |
-| `{duration_s_total}` | Total duration seconds (unpadded) | `3909` |
-| `{duration_ms}` | Duration in milliseconds (raw) | `210000` |
-
-**Default template:** `Now Playing: {title} by {artist}`
-
-The rendered output is:
-- Written to **`~/.config/panoptic/current_track.txt`** every second (great for OBS text file sources)
-- Available via **`GET http://127.0.0.1:3000/current-track`** (great for custom widgets)
-
-### Live Overlay
-
-The **Live Overlay** tab provides a real-time preview of the "Now Playing" card alongside a CSS editor. Edit the stylesheet and see changes apply instantly. All overlay DOM elements use `panoptic-overlay-*` prefixed class names and CSS custom properties declared in `:root`, for example:
-
-```css
---panoptic-overlay-card-background
---panoptic-overlay-album-art-width
---panoptic-overlay-track-title-text-color
-```
-
-Custom themes are provided in the [`examples/now-playing/`](examples/now-playing/) directory:
-- [`now-playing-default.css`](examples/now-playing/now-playing-default.css) - Standard modern card layout.
-- [`spinning-vinyl.css`](examples/now-playing/spinning-vinyl.css) - Premium circular disc style with spinning animation (customisable clockwise or widdershins) and static outer progress bar ring.
-
-### OBS Integration
-
-**Browser source (full styled overlay - recommended):**
-1. Add a new **Browser** source in OBS.
-2. In the **URL** field, enter: **`http://127.0.0.1:3000/overlay/now-playing`**
-3. Set the width and height to match your desired overlay size (e.g., Width: `500`, Height: `200` depending on your card styling).
-4. *(Optional)* Clear any default CSS inside OBS's custom CSS box if you want to use the stylesheet directly from Panoptic's Live Overlay editor. The overlay pulls its stylesheet dynamically from Panoptic.
-
-**Text file source (simple plain text):**
-1. Add a **Text (GDI+)** source in OBS.
-2. Check **Read from file** and point it to:
-   * Linux: `~/.config/panoptic/current_track.txt`
-   * Windows: `%USERPROFILE%\.config\panoptic\current_track.txt`
-3. The text updates automatically every second based on your output template.
-
-## Configuration
-
-Settings are stored in your platform's standard config directory:
-
-| Platform | Path |
-|----------|------|
-| **Linux** | `~/.config/com.jaintp.panoptic/settings.json` |
-| **Windows** | `%APPDATA%\com.jaintp.panoptic\settings.json` |
-
-The JSON file contains:
-
-```json
-{
-  "client_id": "your-spotify-client-id",
-  "access_token": "...",
-  "refresh_token": "...",
-  "template": "Now Playing: {title} by {artist}"
+    // Handle button clicks from the UI
+    fn handle_action(&self, action: &str, app: &tauri::AppHandle) -> Result<Value, String>;
 }
 ```
 
-> **Security note:** Tokens are stored locally on your machine. No secrets are sent to any third party. Authentication uses PKCE, meaning no client secret exists.
+### How to use Plugins
+1. **Registration:** Plugins are registered in `crates/ui/panoptic-gui/src-tauri/src/lib.rs` inside the `PluginRegistry`.
+2. **UI Generation:** If a plugin provides a `settings_definition`, Panoptic automatically renders a tab for it in the **Settings** window.
+3. **Data Access:** React components can listen for Tauri events emitted by plugins (e.g., `twitch_hype_train`) to show live previews.
 
-## HTTP API Reference
+---
 
-Panoptic runs a local Axum server on **`http://127.0.0.1:3000`**:
+## Usage
 
-| Endpoint | Method | Response | Description |
-|----------|--------|----------|-------------|
-| `/overlay/now-playing` | `GET` | `text/html` | HTML template representing the OBS/browser overlay page |
-| `/overlay/now-playing/style.css` | `GET` | `text/css` | Dynamic stylesheet containing your custom CSS |
-| `/playback` | `GET` | `application/json` | JSON structure representing full playback metadata |
-| `/current-track` | `GET` | `text/plain` | Formatted track string from the output template |
-| `/health` | `GET` | `200 OK` | Server health check |
-| `/callback` | `GET` | Redirect | Spotify OAuth PKCE redirect handler (internal) |
+### Live Overlay Customisation
+1. Open **Settings** → **Display** tab.
+2. Select an overlay (e.g., **Twitch Alerts**).
+3. **Text Content:** Edit your messages using the **Variable Grid**. Click a variable like `{user}` to instantly insert it at your cursor.
+4. **Custom CSS:** Use the right-hand editor to style your components. Use the **Simulate All Alerts** or **Test Hype Train** buttons to see animations in action.
 
-## Development
+### OBS Integration
 
-### Running Tests
+**Browser Source:**
+Add a new Browser source in OBS and point it to:
+- **Now Playing:** `http://localhost:3000/overlay/now-playing`
+- **Hype Train:** `http://localhost:3000/overlay/twitch/hype-train`
+- **Alerts:** `http://localhost:3000/overlay/twitch/alerts`
+
+The overlays pull their CSS directly from your Panoptic configuration.
+
+### 📖 Theming Wiki
+For detailed technical documentation on how to fully customize every aspect of your overlays, visit the **Theming Wiki**:
+- [**Theming Overview**](docs/Theming-Overview.md) - How the CSS engine and side-by-side editor work.
+- [**Now Playing CSS Guide**](docs/Now-Playing-CSS.md) - Variables for layout, typography, and progress.
+- [**Hype Train CSS Guide**](docs/Hype-Train-CSS.md) - Variables for progress tiers and leaderboards.
+- [**Twitch Alerts CSS Guide**](docs/Twitch-Alerts-CSS.md) - Variables for dynamic stacking and professional transitions.
+
+---
+
+## Installation & Building
+
+Please see the [Architecture section](#architecture) for crate details. To build from source:
 
 ```bash
-# Rust backend tests (all crates)
-cargo test --workspace
-
-# Frontend component tests
+# Prerequisites: Rust (stable), Node.js (v22+), npm
 cd crates/ui/panoptic-gui
-npm run test
+npm install
+npx tauri dev
 ```
 
-### Code Quality
+Multi-platform builds are automated via [`build.py`](build.py).
 
-```bash
-# Format check
-cargo fmt --check
+---
 
-# Lint
-cargo clippy -- -D warnings
+## Configuration
 
-# Frontend
-cd crates/ui/panoptic-gui
-npx tsc --noEmit
-```
+Settings and Stylesheets are stored in:
+- **Linux:** `~/.config/com.jaintp.panoptic/`
+- **Windows:** `%APPDATA%\com.jaintp.panoptic\`
 
-### CI/CD
-
-- **Release workflow** ([`.github/workflows/release.yml`](.github/workflows/release.yml)) - triggered on `v*` tag push. Builds Linux and Windows bundles in parallel and creates a draft GitHub Release with all artifacts attached.
-
-To cut a release:
-
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-```
-
-## Troubleshooting
-
-### Wayland / Hyprland - blank window or crash
-
-Panoptic automatically sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` on Linux to work around a WebKitGTK DMA-BUF rendering bug on Wayland compositors. If you still see issues, ensure your `webkit2gtk` package is up to date.
-
-### Spotify shows "Not linked" despite authorising
-
-- Check that no firewall is blocking `127.0.0.1:3000`.
-- Ensure only one instance of Panoptic is running (the callback server binds exclusively to port 3000).
-- Try unlinking and re-linking from the Auth tab.
-
-### Progress bar stalling
-
-If the progress bar freezes, the native media player may not support position queries. Panoptic defaults to `0` gracefully. The Spotify Web API fallback provides accurate progress data.
+Stylesheets are physically stored as `{plugin_id}.css` in the `overlays/` subdirectory, allowing you to back them up or share them easily.
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+MIT - See [LICENSE](LICENSE) for details.

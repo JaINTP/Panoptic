@@ -1,115 +1,307 @@
+/* ════════════════════════════════════════════════════════════════
+   TWITCH OVERLAY — Hype Train Theme (Panoptic Port)
+   ════════════════════════════════════════════════════════════════ */
+
 :root {
-  --bg-main: #121318;
-  --bg-sidebar: #0a0b0e;
-  --bg-card: #1c1e26;
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
-  --accent-primary: #8b5cf6;
-  --accent-secondary: #0d9488;
-  --error: #ef4444;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --border: #2d3139;
+  --ht-color-bg: #07000f;
+  --ht-color-bg-rgb: 7,0,15;
+  --ht-color-bg-opacity: 0.93;
+  --ht-color-primary: #8b3fa8;
+  --ht-color-primary-rgb: 139,63,168;
+  --ht-color-secondary: #d4a843;
+  --ht-color-text: #ede0ff;
+  --ht-color-subtext: #9978bb;
+  --ht-color-progress: #2fba5a;
+  --ht-color-progress-rgb: 47,186,90;
+  --ht-color-progress-bg: #071510;
+  --ht-color-border: #5a2575;
+  --ht-color-border-rgb: 90,37,117;
+  --ht-font-family: 'Cinzel', 'MedievalSharp', Georgia, serif;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-body {
-  background-color: transparent;
-  color: var(--text-main);
+/* ── Main card ─────────────────────────────────────────────────── */
+.hype-train-card {
+  position: relative;
+  width: 380px;
+  background: rgba(var(--ht-color-bg-rgb), var(--ht-color-bg-opacity)) !important;
+  border: 1px solid rgba(var(--ht-color-border-rgb), 0.55) !important;
+  border-radius: 10px;
   overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 16px;
+  box-shadow:
+    0 0 0 1px rgba(var(--ht-color-primary-rgb), 0.12),
+    0 0 30px rgba(var(--ht-color-primary-rgb), 0.18),
+    0 0 60px rgba(var(--ht-color-primary-rgb), 0.07),
+    inset 0 0 30px rgba(var(--ht-color-primary-rgb), 0.04),
+    0 8px 32px rgba(0,0,0,0.7) !important;
+  animation: HTcardBreathe 6s ease-in-out infinite;
+  font-family: var(--ht-font-family);
+  color: var(--ht-color-text);
 }
 
-.overlay-container {
-  padding: 20px;
+@keyframes HTcardBreathe {
+  0%, 100% { box-shadow:
+    0 0 0 1px rgba(var(--ht-color-primary-rgb), 0.12),
+    0 0 25px rgba(var(--ht-color-primary-rgb), 0.15),
+    0 0 50px rgba(var(--ht-color-primary-rgb), 0.06),
+    inset 0 0 30px rgba(var(--ht-color-primary-rgb), 0.04),
+    0 8px 32px rgba(0,0,0,0.7); }
+  50% { box-shadow:
+    0 0 0 1px rgba(var(--ht-color-primary-rgb), 0.2),
+    0 0 40px rgba(var(--ht-color-primary-rgb), 0.28),
+    0 0 80px rgba(var(--ht-color-primary-rgb), 0.12),
+    inset 0 0 30px rgba(var(--ht-color-primary-rgb), 0.07),
+    0 8px 32px rgba(0,0,0,0.7); }
+}
+
+/* Top edge shimmer line */
+.hype-train-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(212,168,67, 0.6) 40%,
+    rgba(212,168,67, 0.6) 60%,
+    transparent);
+  z-index: 2;
+}
+
+/* ── Idle state ─────────────────────────────────────────────────── */
+.hype-idle-state {
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
+  gap: 14px;
+  position: relative;
+  z-index: 2;
 }
 
-/* Minimalist App Name Box */
-.brand-box {
-  background: var(--bg-main);
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 4px;
+.status-icon-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+.status-icon {
+  font-size: 28px;
+  display: block;
+  animation: iconBob 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(var(--ht-color-progress-rgb), 0.6));
+  position: relative;
+  z-index: 2;
+}
+
+@keyframes iconBob {
+  0%, 100% { transform: scale(1)    rotate(-4deg); }
+  50%       { transform: scale(1.08) rotate(4deg); filter: drop-shadow(0 0 16px rgba(var(--ht-color-progress-rgb), 0.9)); }
+}
+
+.hype-title {
+  font-family: 'Cinzel Decorative', var(--ht-font-family);
   font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--accent-primary);
-  text-transform: uppercase;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  color: var(--ht-color-secondary);
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  text-shadow: 0 0 12px rgba(212,168,67,0.4);
 }
 
-/* Now Playing Card */
-.now-playing-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  gap: 16px;
-  width: 320px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+.hype-sub {
+  font-size: 11px;
+  color: var(--ht-color-subtext);
+  letter-spacing: 0.8px;
+  margin-top: 3px;
+  font-style: italic;
+  animation: idlePulse 4s ease-in-out infinite;
 }
 
-.artwork {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  background: var(--bg-main);
-  object-fit: cover;
-  border: 1px solid var(--border);
+@keyframes idlePulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
 }
 
-.track-info {
-  flex: 1;
+/* ── Active state ───────────────────────────────────────────────── */
+.hype-active-state {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  overflow: hidden;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
 }
 
-.title {
-  font-size: 16px;
+.hype-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hype-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hype-icon {
+  font-size: 20px;
+  animation: HThypeIconSpin 3s ease-in-out infinite;
+  display: inline-block;
+  filter: drop-shadow(0 0 8px rgba(var(--ht-color-primary-rgb), 0.7));
+}
+
+@keyframes HThypeIconSpin {
+  0%, 100% { transform: scale(1)    rotate(0deg);  }
+  25%       { transform: scale(1.1) rotate(-8deg); }
+  75%       { transform: scale(1.1) rotate(8deg);  }
+}
+
+.hype-active-title {
+  font-family: 'Cinzel Decorative', var(--ht-font-family);
+  font-size: 18px;
   font-weight: 700;
+  background: linear-gradient(135deg, var(--ht-color-text), var(--ht-color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.5px;
+  text-shadow: none;
+}
+
+.hype-level-badge {
+  font-family: var(--ht-font-family);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ht-color-secondary);
+  border: 1px solid rgba(212,168,67,0.4);
+  border-radius: 20px;
+  padding: 3px 12px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 4px;
+  text-shadow: 0 0 8px rgba(212,168,67,0.5);
+  box-shadow: 0 0 10px rgba(212,168,67,0.15);
+  animation: HTbadgeGlow 2.5s ease-in-out infinite;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.artist {
-  font-size: 14px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 12px;
+@keyframes HTbadgeGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(212,168,67,0.15); }
+  50%       { box-shadow: 0 0 20px rgba(212,168,67,0.4), 0 0 40px rgba(212,168,67,0.1); }
 }
 
-.progress-container {
-  width: 100%;
-  height: 4px;
-  background: var(--bg-main);
-  border-radius: 2px;
-  overflow: hidden;
+/* ── Progress bar ────────────────────────────────────────────── */
+.hype-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.progress-bar {
+.hype-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--ht-color-subtext);
+  letter-spacing: 0.3px;
+}
+
+.hype-progress-track {
+  height: 10px;
+  background: var(--ht-color-progress-bg);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--ht-color-progress-rgb), 0.2);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+}
+
+.hype-progress-fill {
   height: 100%;
-  background: var(--accent-primary);
-  transition: width 0.5s linear;
+  background: linear-gradient(90deg,
+    rgba(var(--ht-color-progress-rgb), 0.8),
+    var(--ht-color-progress),
+    rgba(var(--ht-color-progress-rgb), 0.9));
+  border-radius: 999px;
+  transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(var(--ht-color-progress-rgb), 0.6);
 }
 
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+/* Shimmer sweep */
+.hype-progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.28) 50%,
+    transparent 100%);
+  animation: HTshimmer 2s infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes HTshimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+/* ── Leaderboard members ───────────────────────────────────────────── */
+.hype-leaderboard-section {
+  border-top: 1px solid rgba(var(--ht-color-border-rgb), 0.3);
+  padding-top: 8px;
+}
+
+.hype-leaderboard-label {
+  font-size: 9px;
+  color: var(--ht-color-subtext);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.hype-leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hype-leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  animation: HTitemAppear 0.3s ease both;
+}
+
+@keyframes HTitemAppear {
+  from { opacity:0; transform: translateX(6px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+
+.hype-rank { width: 20px; flex-shrink:0; font-size:13px; }
+.hype-name { flex:1; font-weight:600; color:var(--ht-color-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hype-amount { color:var(--ht-color-secondary); font-weight:700; font-size:11px; white-space:nowrap; }
+
+/* ── Corners ───────────────────────────────────────────────────── */
+.corner {
+  position: absolute;
+  font-size: 9px;
+  color: rgba(212, 168, 67, 0.55);
+  z-index: 3;
+  line-height: 1;
+  pointer-events: none;
+  animation: HTcornerTwinkle 4s ease-in-out infinite;
+}
+.corner.tl { top: 7px;  left: 9px;  }
+.corner.tr { top: 7px;  right: 9px; animation-delay: 1s; }
+.corner.bl { bottom: 7px; left: 9px;  animation-delay: 2s; }
+.corner.br { bottom: 7px; right: 9px; animation-delay: 3s; }
+
+@keyframes HTcornerTwinkle {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 0.9; transform: scale(1.3); }
 }

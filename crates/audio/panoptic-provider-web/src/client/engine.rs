@@ -27,7 +27,11 @@ impl WebFallbackEngine {
     pub async fn try_web_poll(&mut self) -> Result<Option<PlaybackState>, WebPollError> {
         let current_auth = self.auth_state.borrow().clone();
         match current_auth {
-            AuthState::Authenticated { access_token, .. } => {
+            AuthState::Authenticated {
+                provider,
+                access_token,
+                ..
+            } if provider == "spotify" => {
                 if self.web_client.is_none() || self.current_token.as_ref() != Some(&access_token) {
                     let schema = match SchemaBootstrapper::bootstrap().await {
                         Some(s) => s,

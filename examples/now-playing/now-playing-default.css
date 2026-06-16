@@ -3,33 +3,34 @@
   /* Card Layout & Background */
   --panoptic-overlay-card-display: flex;
   --panoptic-overlay-card-gap: 20px;
-  --panoptic-overlay-card-background: rgba(19, 21, 28, 0.75);
+  --panoptic-overlay-card-background: rgba(18, 17, 26, 0.75);
   --panoptic-overlay-card-border-style: solid;
   --panoptic-overlay-card-border-width: 1px;
-  --panoptic-overlay-card-border-color: rgba(255, 255, 255, 0.08);
+  --panoptic-overlay-card-border-color: rgba(157, 78, 221, 0.2);
   --panoptic-overlay-card-backdrop-blur: 16px;
   --panoptic-overlay-card-padding: 20px;
   --panoptic-overlay-card-border-radius: 16px;
   --panoptic-overlay-card-width: 380px;
-  --panoptic-overlay-card-box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  --panoptic-overlay-card-box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(157, 78, 221, 0.05);
   
   /* Album Art Image */
   --panoptic-overlay-album-art-width: 90px;
   --panoptic-overlay-album-art-height: 90px;
   --panoptic-overlay-album-art-border-radius: 10px;
   --panoptic-overlay-album-art-object-fit: cover;
-  --panoptic-overlay-album-art-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --panoptic-overlay-album-art-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   
   /* Song Title Typography */
-  --panoptic-overlay-track-title-font-family: 'Outfit', sans-serif;
+  --panoptic-overlay-track-title-font-family: 'MedievalSharp', serif;
   --panoptic-overlay-track-title-font-size: 17px;
   --panoptic-overlay-track-title-font-weight: 700;
   --panoptic-overlay-track-title-text-color: #ffffff;
+  --panoptic-overlay-track-title-text-shadow: 0 0 8px rgba(199, 125, 255, 0.2);
   
   /* Artist Name Typography */
   --panoptic-overlay-track-artist-font-size: 13.5px;
   --panoptic-overlay-track-artist-font-weight: 600;
-  --panoptic-overlay-track-artist-text-color: var(--accent-primary);
+  --panoptic-overlay-track-artist-text-color: var(--accent-secondary);
   
   /* Album Name Typography */
   --panoptic-overlay-track-album-font-size: 11px;
@@ -38,9 +39,9 @@
   
   /* Progress Bar Styling */
   --panoptic-overlay-progress-bar-height: 5px;
-  --panoptic-overlay-progress-bar-background: rgba(255, 255, 255, 0.08);
+  --panoptic-overlay-progress-bar-background: rgba(0, 0, 0, 0.4);
   --panoptic-overlay-progress-bar-border-radius: 3px;
-  --panoptic-overlay-progress-bar-fill-gradient: linear-gradient(90deg, var(--accent-primary) 0%, #a78bfa 100%);
+  --panoptic-overlay-progress-bar-fill-gradient: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
   
   /* Time Display Typography */
   --panoptic-overlay-time-display-font-family: 'JetBrains Mono', monospace;

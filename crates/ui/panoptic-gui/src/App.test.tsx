@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { expect, test, describe, vi } from 'vitest';
+import { expect, test, describe } from 'vitest';
 import App from './App';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -27,41 +27,46 @@ describe('Panoptic React GUI Tests', () => {
     render(<App />);
 
     // Click on Auth tab
-    const authTab = screen.getByRole('link', { name: /auth/i });
+    const authTab = screen.getByRole('button', { name: /auth/i });
     fireEvent.click(authTab);
 
     // Verify Auth view is displayed
     expect(screen.getByRole('heading', { level: 1, name: 'Authentication' })).toBeInTheDocument();
-    expect(screen.getByText('Developer App Settings')).toBeInTheDocument();
-    expect(screen.getByText('Spotify Integration')).toBeInTheDocument();
+    
+    // Check for dynamic plugin content
+    await waitFor(() => {
+      expect(screen.getByText('Spotify')).toBeInTheDocument();
+      expect(screen.getByText('Custom Client ID')).toBeInTheDocument();
+    });
 
     // Click on Output tab
-    const outputTab = screen.getByRole('link', { name: /output/i });
+    const outputTab = screen.getByRole('button', { name: /output/i });
     fireEvent.click(outputTab);
 
     // Verify Output view is displayed
     expect(screen.getByRole('heading', { level: 1, name: 'Output Templating' })).toBeInTheDocument();
   });
 
-  test('submits custom client id on Auth panel', async () => {
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  test('updates plugin settings on Auth panel', async () => {
     render(<App />);
 
     // Go to Auth tab
-    fireEvent.click(screen.getByRole('link', { name: /auth/i }));
-
-    const input = screen.getByPlaceholderText(/e.g. 299d6d15/i);
-    fireEvent.change(input, { target: { value: 'my-new-client-id' } });
-    expect(input).toHaveValue('my-new-client-id');
-
-    const saveButton = screen.getByRole('button', { name: /save id/i });
-    fireEvent.click(saveButton);
+    fireEvent.click(screen.getByRole('button', { name: /auth/i }));
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith('set_spotify_client_id', { clientId: 'my-new-client-id' });
+      expect(screen.getByText('Spotify')).toBeInTheDocument();
     });
 
-    expect(alertMock).toHaveBeenCalledWith('Spotify Client ID saved successfully!');
-    alertMock.mockRestore();
+    const input = screen.getByDisplayValue('mock-client-id-123');
+    fireEvent.change(input, { target: { value: 'my-new-client-id' } });
+    
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith('set_plugin_settings', expect.objectContaining({
+        pluginId: 'spotify',
+        newSettings: expect.objectContaining({
+          client_id: 'my-new-client-id'
+        })
+      }));
+    });
   });
 });

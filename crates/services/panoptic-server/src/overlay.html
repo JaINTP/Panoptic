@@ -6,7 +6,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/overlay/now-playing/style.css">
+  <link id="overlay-style" rel="stylesheet" href="/overlay/now_playing/style.css">
+
   <style>
     /* Default fallback and overlay settings */
     body {
@@ -47,6 +48,7 @@
     let progressMs = 0;
     let durationMs = 0;
     let lastUpdate = Date.now();
+    let currentCssVersion = 0;
 
     function formatTime(ms) {
       if (!ms || isNaN(ms) || ms < 0) return '0:00';
@@ -69,11 +71,13 @@
       const album = document.querySelector('.panoptic-overlay-track-album');
       const duration = document.querySelector('.panoptic-overlay-time-duration');
 
+      const settings = window.PanopticSettings || {};
+
       if (!state || !state.title) {
         wrapper.setAttribute('data-playing', 'false');
-        title.textContent = 'Not Playing';
-        artist.textContent = 'Unknown Artist';
-        album.textContent = 'Unknown Album';
+        title.textContent = settings.not_playing_title || 'Not Playing';
+        artist.textContent = settings.not_playing_artist || 'Unknown Artist';
+        album.textContent = settings.not_playing_album || 'Unknown Album';
         duration.textContent = '0:00';
         art.style.display = 'none';
         isPlaying = false;
@@ -128,8 +132,19 @@
           const state = await response.json();
           updateDOM(state);
         }
+
+        const vRes = await fetch('/overlay/version');
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          if (vData.version > currentCssVersion) {
+            console.log('CSS updated, reloading...');
+            const link = document.getElementById('overlay-style');
+            link.href = `/overlay/now_playing/style.css?v=${vData.version}`;
+            currentCssVersion = vData.version;
+          }
+        }
       } catch (err) {
-        console.error('Error fetching playback state:', err);
+        console.error('Error fetching state:', err);
       }
     }
 

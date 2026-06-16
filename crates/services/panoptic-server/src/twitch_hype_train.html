@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Twitch Hype Train</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+  <link id="overlay-style" rel="stylesheet" href="/overlay/twitch_notifications/style.css">
+  <style>
+    body { background: transparent; overflow: hidden; margin: 0; padding: 0; }
+    #overlay-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay-container">
+    <div id="hype-card" class="hype-train-card">
+      <!-- Corner Ornaments -->
+      <div class="corner tl">✦</div>
+      <div class="corner tr">✦</div>
+      <div class="corner bl">✦</div>
+      <div class="corner br">✦</div>
+
+      <!-- Idle State -->
+      <div id="idle" class="hype-idle-state">
+        <div class="status-icon-wrap">
+          <div class="status-icon">💤</div>
+        </div>
+        <div class="hype-text">
+          <div class="hype-title" id="inactive-title">Hype Train</div>
+          <div class="hype-sub" id="inactive-subtitle">awaiting event…</div>
+        </div>
+      </div>
+
+      <!-- Active State -->
+      <div id="active" class="hype-active-state" style="display: none;">
+        <div class="hype-header">
+          <div class="hype-title-row">
+            <span class="hype-icon">⚡</span>
+            <span class="hype-active-title" id="active-title">Hype Train Active!</span>
+          </div>
+          <div class="hype-level-badge" id="level">Level I</div>
+        </div>
+
+        <div class="hype-progress-section">
+          <div class="hype-progress-labels">
+            <span id="next-level">Progress to Level II</span>
+            <span class="hype-progress-pct" id="percent">0%</span>
+          </div>
+          <div class="hype-progress-track">
+            <div id="fill" class="hype-progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="hype-leaderboard-section">
+          <div class="hype-leaderboard-label" id="leaderboard-title">⁕ Top Contributors ⁕</div>
+          <div class="hype-leaderboard-list" id="leaderboard-list">
+            <!-- Members here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+    const toRoman = (n) => ROMAN[n - 1] || String(n);
+    let currentCssVersion = 0;
+
+    async function poll() {
+      try {
+        const res = await fetch('/twitch/hype-train');
+        if (res.ok) {
+          const data = await res.json();
+          update(data.state, data.settings);
+        }
+
+        const vRes = await fetch('/overlay/version');
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          if (vData.version > currentCssVersion) {
+            const link = document.getElementById('overlay-style');
+            link.href = `/overlay/twitch_notifications/style.css?v=${vData.version}`;
+            currentCssVersion = vData.version;
+          }
+        }
+      } catch(e) {}
+    }
+
+    function update(state, settings) {
+      const idle = document.getElementById('idle');
+      const active = document.getElementById('active');
+      
+      if (settings) {
+        document.getElementById('inactive-title').textContent = settings.inactive_title || "Hype Train";
+        document.getElementById('inactive-subtitle').textContent = settings.inactive_subtitle || "awaiting event…";
+        document.getElementById('active-title').textContent = settings.active_title || "Hype Train Active!";
+        document.getElementById('leaderboard-title').textContent = settings.leaderboard_title || "⁕ Top Contributors ⁕";
+      }
+      
+      if (!state.active) {
+        idle.style.display = 'flex';
+        active.style.display = 'none';
+        return;
+      }
+
+      idle.style.display = 'none';
+      active.style.display = 'flex';
+
+      const levelPrefix = settings?.level_prefix || "Level";
+      const progressPrefix = settings?.progress_prefix || "Progress to";
+
+      document.getElementById('level').textContent = `${levelPrefix} ${toRoman(state.level)}`;
+      document.getElementById('next-level').textContent = `${progressPrefix} ${levelPrefix} ${toRoman(state.level + 1)}`;
+      
+      const pct = Math.min(100, Math.round((state.progress / state.goal) * 100));
+      document.getElementById('percent').textContent = `${pct}%`;
+      document.getElementById('fill').style.width = `${pct}%`;
+
+      const list = document.getElementById('leaderboard-list');
+      if (state.top_contributions && state.top_contributions.length > 0) {
+        list.innerHTML = state.top_contributions.slice(0, 3).map((c, i) => `
+          <div class="hype-leaderboard-item" style="animation-delay: ${i * 0.1}s">
+            <span class="hype-rank">
+               ${c.type_field === 'SUBSCRIPTION' ? '💖' : '💎'}
+            </span>
+            <span class="hype-name">${c.user_name}</span>
+            <span class="hype-amount">${c.total.toLocaleString()}</span>
+          </div>
+        `).join('');
+      } else {
+        const emptyText = settings?.empty_leaderboard_text || "No contributors yet…";
+        list.innerHTML = `<div style="color: var(--ht-color-subtext); font-size: 0.85em; font-style: italic; text-align: center;">${emptyText}</div>`;
+      }
+    }
+
+    setInterval(poll, 1000);
+    poll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+/* ════════════════════════════════════════════════════════════════
+   CYBER-NEON OVERLOAD — Twitch Hype Train Template
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ht-color-bg: #050508;
+  --ht-color-bg-rgb: 5,5,8;
+  --ht-color-primary: #ff0055;   /* Cyber Pink */
+  --ht-color-primary-rgb: 255,0,85;
+  --ht-color-secondary: #00f2ff; /* Electric Cyan */
+  --ht-color-secondary-rgb: 0,242,255;
+  --ht-color-text: #ffffff;
+  --ht-color-subtext: #8888aa;
+  --ht-color-progress: #00f2ff;
+  --ht-color-progress-bg: rgba(0,0,0,0.6);
+  --ht-color-border: #1a1a2e;
+  --ht-font-family: 'Orbitron', 'Rajdhani', 'JetBrains Mono', sans-serif;
+}
+
+/* ── Main card ─────────────────────────────────────────────────── */
+.hype-train-card {
+  position: relative;
+  width: 400px;
+  background: var(--ht-color-bg) !important;
+  border: 2px solid var(--ht-color-primary) !important;
+  border-radius: 4px; /* Sharp tech corners */
+  overflow: hidden;
+  padding: 20px;
+  box-shadow: 
+    0 0 15px rgba(var(--ht-color-primary-rgb), 0.4),
+    inset 0 0 10px rgba(var(--ht-color-primary-rgb), 0.2);
+  font-family: var(--ht-font-family);
+  color: var(--ht-color-text);
+  text-transform: uppercase;
+}
+
+/* Scanline Effect */
+.hype-train-card::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.1) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 3px, 3px 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Idle state ─────────────────────────────────────────────────── */
+.hype-idle-state {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0.8;
+}
+
+.status-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 8px var(--ht-color-secondary));
+  animation: pulseNeon 2s ease-in-out infinite;
+}
+
+@keyframes pulseNeon {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.hype-title {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--ht-color-secondary);
+  margin-bottom: 4px;
+}
+
+.hype-sub {
+  font-size: 10px;
+  color: var(--ht-color-subtext);
+  letter-spacing: 1px;
+}
+
+/* ── Active state ───────────────────────────────────────────────── */
+.hype-active-state {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hype-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hype-active-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 
+    2px 2px var(--ht-color-primary),
+    -1px -1px var(--ht-color-secondary);
+  letter-spacing: 1px;
+  animation: glitch 1s infinite;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.hype-level-badge {
+  background: var(--ht-color-primary);
+  color: #000;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 4px 12px;
+  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+}
+
+/* ── Progress bar ────────────────────────────────────────────── */
+.hype-progress-track {
+  height: 12px;
+  background: var(--ht-color-progress-bg);
+  border: 1px solid var(--ht-color-secondary);
+  position: relative;
+}
+
+.hype-progress-fill {
+  height: 100%;
+  background: var(--ht-color-secondary);
+  box-shadow: 0 0 15px var(--ht-color-secondary);
+  transition: width 0.3s ease;
+}
+
+/* ── Leaderboard ───────────────────────────────────────────── */
+.hype-leaderboard-section {
+  border-top: 1px dashed var(--ht-color-subtext);
+  padding-top: 12px;
+}
+
+.hype-leaderboard-label {
+  font-size: 10px;
+  color: var(--ht-color-secondary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.hype-leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 6px;
+  background: rgba(var(--ht-color-secondary-rgb), 0.05);
+  padding: 4px 8px;
+  border-left: 3px solid var(--ht-color-primary);
+}
+
+.hype-rank { font-size: 16px; }
+.hype-name { flex: 1; font-weight: 700; color: #fff; }
+.hype-amount { color: var(--ht-color-secondary); font-weight: 900; font-family: 'JetBrains Mono', monospace; }
+
+/* ── Corners ───────────────────────────────────────────────────── */
+.corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ht-color-secondary);
+  z-index: 5;
+}
+.corner.tl { top: 5px; left: 5px; border-right: none; border-bottom: none; }
+.corner.tr { top: 5px; right: 5px; border-left: none; border-bottom: none; }
+.corner.bl { bottom: 5px; left: 5px; border-right: none; border-top: none; }
+.corner.br { bottom: 5px; right: 5px; border-left: none; border-top: none; }

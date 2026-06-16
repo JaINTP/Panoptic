@@ -1,5 +1,5 @@
-use crate::AppState;
 use axum::{extract::State, http::header, response::IntoResponse};
+use panoptic_core::AppState;
 
 pub async fn get_current_track(State(state): State<AppState>) -> impl IntoResponse {
     let formatted = state.state_rx.borrow().formatted_output.clone();
@@ -32,9 +32,11 @@ mod tests {
         });
         let (auth_tx, _auth_rx) = watch::channel(AuthState::Unauthenticated);
 
+        let (_, css_version_rx) = watch::channel(1u32);
         let state = AppState {
             auth_tx,
             state_rx,
+            css_version_rx,
             settings_path: None,
         };
 
@@ -67,9 +69,11 @@ mod tests {
             ..Default::default()
         });
         let (auth_tx, _auth_rx) = watch::channel(AuthState::Unauthenticated);
+        let (_, css_version_rx) = watch::channel(1u32);
         let state = AppState {
             auth_tx,
             state_rx,
+            css_version_rx,
             settings_path: None,
         };
 

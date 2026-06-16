@@ -1,6 +1,6 @@
 [package]
 name = "panoptic"
-version = "0.1.3"
+version = "0.1.4"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -26,12 +26,21 @@ tokio = { version = "1", features = ["full"] }
 rand = "0.8"
 sha2 = "0.10"
 base64 = "0.22"
+urlencoding = "2.1"
+axum = "0.7"
 reqwest = { version = "0.11", features = ["json"] }
-panoptic-core = { path = "../../../panoptic-core" }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+log = "0.4"
+tracing-log = "0.2"
+panoptic-core = { path = "../../../panoptic-core", features = ["plugin"] }
 panoptic-provider-linux = { path = "../../../audio/panoptic-provider-linux" }
 panoptic-provider-windows = { path = "../../../audio/panoptic-provider-windows" }
 panoptic-provider-web = { path = "../../../audio/panoptic-provider-web" }
 panoptic-server = { path = "../../../services/panoptic-server" }
 panoptic-cache = { path = "../../../panoptic-cache" }
+tokio-tungstenite = { version = "0.29.0", features = ["native-tls"] }
+futures-util = "0.3.32"
 
 

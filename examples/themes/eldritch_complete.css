@@ -1,0 +1,198 @@
+/* ════════════════════════════════════════════════════════════════
+   ELDRITCH HORROR — Complete Master Theme
+   ════════════════════════════════════════════════════════════════
+   USAGE: Paste this entire file into ANY or ALL Panoptic CSS 
+   editors (Now Playing, Hype Train, Alerts).
+   ════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=MedievalSharp&display=swap');
+
+:root {
+  /* Global Void Colors */
+  --void-purple: #3a0055;
+  --void-green: #00553a;
+  --void-black: #0a0a10;
+  --void-text: #ede0ff;
+
+  /* Now Playing Variables */
+  --panoptic-overlay-card-display: flex;
+  --panoptic-overlay-card-gap: 20px;
+  --panoptic-overlay-card-background: rgba(10, 10, 16, 0.95);
+  --panoptic-overlay-card-border-style: solid;
+  --panoptic-overlay-card-border-width: 2px;
+  --panoptic-overlay-card-border-color: var(--void-purple);
+  --panoptic-overlay-card-backdrop-blur: 16px;
+  --panoptic-overlay-card-padding: 20px;
+  --panoptic-overlay-card-border-radius: 12px;
+  --panoptic-overlay-card-width: 380px;
+  --panoptic-overlay-card-box-shadow: 0 0 25px rgba(58, 0, 85, 0.5);
+  
+  --panoptic-overlay-album-art-width: 90px;
+  --panoptic-overlay-album-art-height: 90px;
+  --panoptic-overlay-album-art-border-radius: 8px;
+  
+  --panoptic-overlay-track-title-font-family: 'Crimson Text', serif;
+  --panoptic-overlay-track-title-font-size: 18px;
+  --panoptic-overlay-track-title-text-color: var(--void-text);
+  
+  --panoptic-overlay-track-artist-text-color: var(--void-green);
+  --panoptic-overlay-track-album-text-color: rgba(153, 120, 187, 0.6);
+  
+  --panoptic-overlay-progress-bar-fill-gradient: linear-gradient(90deg, var(--void-purple) 0%, var(--void-green) 100%);
+  --panoptic-overlay-time-display-font-family: 'MedievalSharp', cursive;
+
+  /* Hype Train & Alert Variables */
+  --ht-color-bg: var(--void-black);
+  --ht-color-primary: var(--void-purple);
+  --ht-color-secondary: var(--void-green);
+  --ht-font-family: 'Crimson Text', serif;
+}
+
+/* ── Global Styles ───────────────────────────────────────────── */
+* { box-sizing: border-box; }
+body { font-style: italic; }
+
+/* ── Now Playing Component (Structural) ──────────────────────── */
+.panoptic-overlay-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.panoptic-overlay-card {
+  display: var(--panoptic-overlay-card-display);
+  gap: var(--panoptic-overlay-card-gap);
+  background: var(--panoptic-overlay-card-background);
+  border: var(--panoptic-overlay-card-border-width) var(--panoptic-overlay-card-border-style) var(--panoptic-overlay-card-border-color);
+  backdrop-filter: blur(var(--panoptic-overlay-card-backdrop-blur));
+  padding: var(--panoptic-overlay-card-padding);
+  border-radius: var(--panoptic-overlay-card-border-radius);
+  width: var(--panoptic-overlay-card-width);
+  box-shadow: var(--panoptic-overlay-card-box-shadow);
+  transition: all 0.3s ease;
+  animation: voidBreathe 8s ease-in-out infinite;
+}
+
+@keyframes voidBreathe {
+  0%, 100% { transform: scale(1); filter: sepia(0.2) hue-rotate(0deg) blur(0px); }
+  50% { transform: scale(1.02); filter: sepia(0.5) hue-rotate(15deg) blur(0.5px); }
+}
+
+.panoptic-overlay-album-art {
+  width: var(--panoptic-overlay-album-art-width);
+  height: var(--panoptic-overlay-album-art-height);
+  border-radius: var(--panoptic-overlay-album-art-border-radius);
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.panoptic-overlay-text-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.panoptic-overlay-track-title {
+  font-family: var(--panoptic-overlay-track-title-font-family);
+  font-size: var(--panoptic-overlay-track-title-font-size);
+  font-weight: 700;
+  color: var(--panoptic-overlay-track-title-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.panoptic-overlay-track-artist {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--panoptic-overlay-track-artist-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.panoptic-overlay-track-album {
+  font-size: 11px;
+  color: var(--panoptic-overlay-track-album-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.panoptic-overlay-progress-container {
+  width: 100%;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.panoptic-overlay-progress-bar {
+  height: 100%;
+  background: var(--panoptic-overlay-progress-bar-fill-gradient);
+}
+
+.panoptic-overlay-time-display {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--panoptic-overlay-time-display-font-family);
+  font-size: 10.5px;
+  color: rgba(153, 120, 187, 0.6);
+}
+
+/* ── Hype Train & Alerts Components ─────────────────────────── */
+.hype-train-card, .alert-card {
+  width: 380px;
+  background: var(--ht-color-bg) !important;
+  border: 2px solid var(--ht-color-primary) !important;
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 0 40px rgba(58, 0, 85, 0.3);
+  font-family: var(--ht-font-family);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.alert-card {
+  border-left: 6px solid var(--void-purple) !important;
+  background: rgba(10, 10, 16, 0.98) !important;
+  animation: voidAlertIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes voidAlertIn {
+  from { opacity: 0; transform: translateY(20px) skewX(5deg); filter: blur(10px); }
+  to { opacity: 1; transform: translateY(0) skewX(0); filter: blur(0); }
+}
+
+.status-icon { 
+  filter: grayscale(1) invert(0.2) sepia(1) saturate(5) hue-rotate(240deg); 
+  animation: iconWarp 4s ease-in-out infinite;
+  font-size: 32px;
+}
+
+@keyframes iconWarp {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(5deg); opacity: 0.7; }
+}
+
+.hype-active-title {
+  font-family: 'MedievalSharp', serif;
+  text-shadow: 0 0 15px var(--void-purple);
+  color: var(--void-text) !important;
+}
+
+.alert-text-content {
+  color: var(--void-green) !important;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(0, 85, 58, 0.3);
+}

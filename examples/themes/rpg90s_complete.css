@@ -1,0 +1,185 @@
+/* ════════════════════════════════════════════════════════════════
+   1990s RPG — Complete Master Theme
+   ════════════════════════════════════════════════════════════════
+   USAGE: Paste this entire file into ANY or ALL Panoptic CSS 
+   editors (Now Playing, Hype Train, Alerts).
+   ════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  /* Global Retro Colors */
+  --rpg-blue: #000080;
+  --rpg-cyan: #0000ff;
+  --rpg-white: #ffffff;
+  --rpg-gold: #ffcc00;
+
+  /* Now Playing Variables */
+  --panoptic-overlay-card-display: flex;
+  --panoptic-overlay-card-gap: 20px;
+  --panoptic-overlay-card-background: var(--rpg-blue);
+  --panoptic-overlay-card-border-style: solid;
+  --panoptic-overlay-card-border-width: 4px;
+  --panoptic-overlay-card-border-color: var(--rpg-white);
+  --panoptic-overlay-card-backdrop-blur: 0px;
+  --panoptic-overlay-card-padding: 20px;
+  --panoptic-overlay-card-border-radius: 0px;
+  --panoptic-overlay-card-width: 420px;
+  --panoptic-overlay-card-box-shadow: inset 0 0 0 2px #000, 6px 6px 0 rgba(0,0,0,0.5);
+  
+  --panoptic-overlay-album-art-width: 90px;
+  --panoptic-overlay-album-art-height: 90px;
+  --panoptic-overlay-album-art-border-radius: 0px;
+  
+  --panoptic-overlay-track-title-font-family: 'Press Start 2P', cursive, monospace;
+  --panoptic-overlay-track-title-font-size: 10px;
+  --panoptic-overlay-track-title-text-color: var(--rpg-white);
+  
+  --panoptic-overlay-track-artist-text-color: var(--rpg-gold);
+  --panoptic-overlay-track-album-text-color: rgba(255, 255, 255, 0.7);
+  
+  --panoptic-overlay-progress-bar-fill-gradient: linear-gradient(90deg, var(--rpg-white) 0%, var(--rpg-white) 100%);
+  --panoptic-overlay-time-display-font-family: 'Press Start 2P', cursive, monospace;
+
+  /* Hype Train & Alert Variables */
+  --ht-color-bg: var(--rpg-blue);
+  --ht-color-primary: var(--rpg-white);
+  --ht-color-secondary: var(--rpg-gold);
+  --ht-font-family: 'Press Start 2P', cursive, monospace;
+}
+
+/* ── Global Styles ───────────────────────────────────────────── */
+* { box-sizing: border-box; image-rendering: pixelated !important; }
+body { font-family: 'Press Start 2P', cursive !important; text-transform: uppercase; }
+
+/* ── Now Playing Component (Structural) ──────────────────────── */
+.panoptic-overlay-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.panoptic-overlay-card {
+  display: var(--panoptic-overlay-card-display);
+  gap: var(--panoptic-overlay-card-gap);
+  background: var(--panoptic-overlay-card-background);
+  border: var(--panoptic-overlay-card-border-width) var(--panoptic-overlay-card-border-style) var(--panoptic-overlay-card-border-color);
+  padding: var(--panoptic-overlay-card-padding);
+  border-radius: var(--panoptic-overlay-card-border-radius);
+  width: var(--panoptic-overlay-card-width);
+  box-shadow: var(--panoptic-overlay-card-box-shadow);
+  transition: none; /* Instant transitions for retro feel */
+  position: relative;
+}
+
+.panoptic-overlay-album-art {
+  width: var(--panoptic-overlay-album-art-width);
+  height: var(--panoptic-overlay-album-art-height);
+  border: 2px solid #000;
+  object-fit: cover;
+}
+
+.panoptic-overlay-text-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.panoptic-overlay-track-title {
+  font-family: var(--panoptic-overlay-track-title-font-family);
+  font-size: var(--panoptic-overlay-track-title-font-size);
+  color: var(--panoptic-overlay-track-title-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.panoptic-overlay-track-artist {
+  font-size: 8px;
+  color: var(--panoptic-overlay-track-artist-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.panoptic-overlay-track-album {
+  font-size: 6px;
+  color: var(--panoptic-overlay-track-album-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 12px;
+}
+
+.panoptic-overlay-progress-container {
+  width: 100%;
+  height: 8px;
+  background: #000;
+  border: 2px solid #fff;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.panoptic-overlay-progress-bar {
+  height: 100%;
+  background: var(--panoptic-overlay-progress-bar-fill-gradient);
+}
+
+.panoptic-overlay-time-display {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--panoptic-overlay-time-display-font-family);
+  font-size: 6px;
+  color: var(--rpg-white);
+}
+
+/* ── Hype Train & Alerts Components ─────────────────────────── */
+.hype-train-card, .alert-card {
+  width: 400px;
+  background: var(--ht-color-bg) !important;
+  border: 4px solid var(--ht-color-primary) !important;
+  padding: 20px;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 2px #000, 6px 6px 0 rgba(0,0,0,0.5) !important;
+  font-family: var(--ht-font-family);
+  color: #fff;
+  position: relative;
+}
+
+.alert-card {
+  box-shadow: 4px 4px 0 #000 !important;
+  animation: rpgAppear 0.2s steps(4) both;
+}
+
+@keyframes rpgAppear {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.status-icon { 
+  filter: drop-shadow(2px 2px 0 #000);
+  animation: spriteBounce 0.6s steps(2) infinite;
+  font-size: 28px;
+}
+
+@keyframes spriteBounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+
+.hype-active-title {
+  font-size: 10px !important;
+  color: var(--rpg-gold) !important;
+}
+
+.alert-text-content {
+  font-size: 8px !important;
+  line-height: 1.8;
+}

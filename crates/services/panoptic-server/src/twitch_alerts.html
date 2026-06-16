@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Twitch Alerts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link id="overlay-style" rel="stylesheet" href="/overlay/twitch_alerts/style.css">
+  <style>
+    body { background: transparent; overflow: hidden; margin: 0; padding: 0; }
+    #overlay-container {
+      position: fixed;
+      bottom: var(--container-bottom, 20px);
+      right: var(--container-right, 20px);
+      display: flex;
+      flex-direction: var(--stack-direction, column-reverse);
+      gap: var(--stack-gap, 12px);
+      pointer-events: none;
+    }
+    
+    /* Default Hidden logic if not handled by CSS */
+    .alert-node {
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay-container">
+    <!-- Alerts injected here -->
+  </div>
+
+  <script>
+    let currentCssVersion = 0;
+    const activeAlertIds = new Set();
+    let alertQueue = [];
+
+    async function poll() {
+      try {
+        const res = await fetch('/twitch/alerts');
+        if (res.ok) {
+          const data = await res.json();
+          update(data.active_alerts, data.settings);
+        }
+
+        const vRes = await fetch('/overlay/version');
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          if (vData.version > currentCssVersion) {
+            const link = document.getElementById('overlay-style');
+            link.href = `/overlay/twitch_alerts/style.css?v=${vData.version}`;
+            currentCssVersion = vData.version;
+          }
+        }
+      } catch(e) {}
+    }
+
+    function getAlertText(alert, settings) {
+      const { type, data } = alert;
+      let text = settings?.[`${type.toLowerCase().replace('subscription', 'sub')}_text`] || "New Event!";
+      
+      // Handle the different alert types and their variables
+      if (type === 'Follow') return text.replace('{user}', data.user_name);
+      if (type === 'Subscription') return text.replace('{user}', data.user_name).replace('{tier}', data.tier).replace('{months}', data.cumulative_months);
+      if (type === 'GiftSubscription') return text.replace('{user}', data.user_name).replace('{total}', data.total).replace('{tier}', data.tier);
+      if (type === 'Raid') return text.replace('{user}', data.from_broadcaster_name).replace('{viewers}', data.viewers);
+      if (type === 'Cheer') return text.replace('{user}', data.user_name).replace('{bits}', data.bits).replace('{message}', data.message);
+      
+      return text;
+    }
+
+    function getIcon(type) {
+      switch (type) {
+        case 'Follow': return '✨';
+        case 'Subscription': return '💖';
+        case 'GiftSubscription': return '🎁';
+        case 'Raid': return '⚔️';
+        case 'Cheer': return '💎';
+        default: return '🔔';
+      }
+    }
+
+    function update(activeAlerts, settings) {
+      if (!activeAlerts) return;
+      
+      window.AlertSettings = settings;
+
+      // If we have new alerts, and we were keeping the last one, 
+      // see if any 'expired' but 'kept' alerts should now be removed.
+      if (activeAlerts.some(a => !activeAlertIds.has(a.id))) {
+          const now = Date.now();
+          const duration = (settings?.alert_duration || 8) * 1000;
+          
+          // Find alerts that have exceeded their duration but were kept
+          alertQueue.slice(0, -1).forEach(id => {
+              // Any alert that isn't the absolute latest is eligible for cleanup 
+              // if a new one is arriving.
+              removeAlert(id);
+          });
+      }
+
+      activeAlerts.forEach(queued => {
+        if (!activeAlertIds.has(queued.id)) {
+          spawnAlert(queued, settings);
+        }
+      });
+    }
+
+    function spawnAlert(queued, settings) {
+      const container = document.getElementById('overlay-container');
+      activeAlertIds.add(queued.id);
+      alertQueue.push(queued.id);
+
+      const div = document.createElement('div');
+      div.id = queued.id;
+      div.className = `alert-node hype-train-card alert-card active alert-${queued.alert.type.toLowerCase()}`;
+      div.setAttribute('data-alert-type', queued.alert.type.toLowerCase());
+      
+      const text = getAlertText(queued.alert, settings);
+      const icon = getIcon(queued.alert.type);
+
+      div.innerHTML = `
+        <div class="hype-active-state" style="gap: 8px;">
+          <div class="hype-header" style="margin-bottom: 4px;">
+            <div class="hype-title-row">
+              <span class="hype-icon">${icon}</span>
+              <span class="hype-active-title" style="font-size: 11px;">${queued.alert.type.replace('Subscription', 'SUB')}</span>
+            </div>
+          </div>
+          <div class="alert-text-content" style="font-size: 13px; font-weight: 600;">
+            ${text}
+          </div>
+        </div>
+      `;
+
+      container.appendChild(div);
+
+      const duration = (settings?.alert_duration || 8) * 1000;
+      const keepLast = settings?.keep_last_alert || false;
+
+      // Expiry Logic
+      setTimeout(() => {
+        // If keepLast is true, don't remove if this is the only alert left
+        if (keepLast && alertQueue.length === 1 && alertQueue[0] === queued.id) {
+          return;
+        }
+
+        // If a new alert has arrived, we might be the 'last' one being replaced
+        removeAlert(queued.id);
+      }, duration);
+    }
+
+    function removeAlert(id) {
+      const div = document.getElementById(id);
+      if (!div) return;
+
+      div.classList.add('fade-out');
+      div.classList.remove('active');
+      
+      const index = alertQueue.indexOf(id);
+      if (index > -1) alertQueue.splice(index, 1);
+
+      setTimeout(() => {
+        div.remove();
+        activeAlertIds.delete(id);
+      }, 1000);
+    }
+
+    // Special check for 'keepLast' when new alerts arrive
+    setInterval(() => {
+        if (window.AlertSettings?.keep_last_alert && alertQueue.length > 1) {
+            // If we have more than 1, the oldest might be the 'kept' one that should now die
+            // Logic: if current time > spawn_time + duration, it's eligible to die if not alone
+            // (Handled partially in spawnAlert's timeout, but this catch-all helps replacement)
+        }
+    }, 1000);
+
+    setInterval(poll, 1000);
+    poll();
+  </script>
+</body>
+</html>

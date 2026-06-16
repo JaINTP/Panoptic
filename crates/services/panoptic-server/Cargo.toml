@@ -4,10 +4,11 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-panoptic-core = { path = "../../panoptic-core" }
+panoptic-core = { path = "../../panoptic-core", features = ["plugin"] }
 axum = "0.7"
 tokio = { version = "1.36", features = ["full"] }
 tower-http = { version = "0.5", features = ["cors"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+tracing = "0.1"
 

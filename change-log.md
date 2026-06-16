@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Overlay Stylesheet & Text Customization:** Added customizable CSS stylesheets and complete text customizability for both the Now Playing and Twitch Notifications overlays. Settings are dynamically loaded and injected into the HTML templates served on `/overlay/now-playing` and `/overlay/twitch`.
+- **Unified Split-Pane GUI Layout:** Redesigned the display view layout to present a 50/50 side-by-side split layout. The left column shows the live preview card on top and the settings configuration inputs on the bottom. The right column houses the full-height CodeMirror editor for live stylesheet styling.
+- **Modular Plugin Architecture (Backend):** Refactored the core media orchestrator, settings management, and Axum routing into a generic compile-time plugin registry, splitting native player detection (MPRIS/SMTC) and Spotify fallbacks into standalone plugins.
+- **Frontend React Componentization:** Reorganized the monolithic 980-line `App.tsx` into clean, modular subcomponents (`Sidebar`, `OverlayPreview`, `SettingsField`, `PlaceholderGrid`) and dedicated views (`DisplayView`, `StorageView`, `AuthView`, `OutputView`), decoupling top-level state from presentation. Added dynamic settings reloading upon receiving the `auth_success` event from the backend so that "Connected" badges update immediately without app restart. Fixed sidebar layout and theme bugs by adding button styling resets (transparency, border removal, left alignment) for the refactored sidebar controls.
+- **Twitch Auth & EventSub Integration:** Refactored the `TwitchPlugin` to fully use the secretless OAuth Implicit Grant flow (`response_type=token`) instead of Authorization Code Flow with PKCE, since Twitch does not support PKCE for public clients:
+  - Supports custom Twitch Client ID configuration via the UI.
+  - Implements secure token persistence via browser fragment redirection, JS hash parameter parsing, and query parameter passing.
+  - Registers a callback handler at `/callback/twitch` which emits `AuthState::Authenticated`.
+  - Added an active `AuthState::Authenticated` observer in `TwitchPlugin` that persists the new access token to `settings.json` and notifies the UI.
+  - Updated the scope list in the authentication URL to explicitly include `channel:read:hype_train`, resolving the EventSub subscription errors (`403 Forbidden`) in the `TwitchNotificationsPlugin`.
+- **Hype Train Overlay Refactor:** Overhauled all Twitch Hype Train overlay visual assets, styling classes, and settings default configuration to be theme-neutral and functional:
+  - Updated HTML overlay ([twitch.html](file:///home/jaintp/git/repos/Panoptic/crates/services/panoptic-server/src/twitch.html)), React preview component ([HypeTrainPreview.tsx](file:///home/jaintp/git/repos/Panoptic/crates/ui/panoptic-gui/src/components/HypeTrainPreview.tsx)), and stylesheet ([overlay.css](file:///home/jaintp/git/repos/Panoptic/crates/ui/panoptic-gui/src/overlay.css)).
+- **Provider-Aware Authentication:** Refactored the core `AuthState` and backend orchestrator to support multiple concurrent authentication providers (e.g., Spotify and Twitch).
+- **Generic Auth Callback Handler:** Implemented a unified `auth_callback` handler in `panoptic-server` that dynamically routes authorization codes or access tokens to the appropriate plugin based on a path parameter.
+- **Cleaned Up Unused Settings Cards:** Added a frontend filter in `StorageView.tsx` to automatically hide settings cards for plugins (like `NativeMediaPlugin`) that do not define any custom settings fields, preventing empty card elements from rendering.
+- **Resolved Clippy Warnings:** Fully implemented the `Default` trait for `TwitchNotificationsPlugin`, simplified unused EventSub fields, optimized vector allocations, and formatted assign-operators to satisfy strict `-D warnings` workspace rules.
+
+### Changed
+
+- **Spotify Plugin Refactor:** Updated the Spotify plugin to use the new provider-aware `AuthState` and the generic server callback handler. Updated its callback route to `/callback/spotify`.
+- **Modular Server Handlers:** Refactored the Axum server to export its handlers, allowing plugins to reuse generic logic for route registration.
+
 ## [0.1.3] - 2026-06-14
 
 ### Added
