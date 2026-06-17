@@ -264,6 +264,11 @@ fn set_not_playing_settings(
     settings.save(&app)
 }
 
+#[tauri::command]
+fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let (cmd_tx, cmd_rx) = mpsc::channel::<AppCommand>(32);
@@ -329,7 +334,8 @@ pub fn run() {
             get_overlay_version,
             get_not_playing_settings,
             set_not_playing_settings,
-            get_update_status
+            get_update_status,
+            get_app_version
         ])
         .setup(move |app| {
             // Initialize logging

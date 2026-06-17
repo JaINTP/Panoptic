@@ -8,6 +8,7 @@ interface SidebarProps {
   setActiveView: (view: View) => void;
   updateVersion: string | null;
   handleOpenUpdate: () => void;
+  version: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -15,10 +16,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveView,
   updateVersion,
   handleOpenUpdate,
+  version,
 }) => {
   return (
     <nav className="sidebar">
-      <div className="sidebar-title">PANOPTIC v0.1.3</div>
+      <div className="sidebar-title">PANOPTIC v{version}</div>
       <button
         type="button"
         className={`sidebar-item ${activeView === 'display' ? 'active' : ''}`}

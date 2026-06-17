@@ -8,7 +8,7 @@ describe('Panoptic React GUI Tests', () => {
     render(<App />);
 
     // Sidebar Title
-    expect(screen.getByText('PANOPTIC v0.1.3')).toBeInTheDocument();
+    expect(screen.getByText('PANOPTIC v0.1.6')).toBeInTheDocument();
 
     // Default view content (Live Overlay Preview)
     expect(screen.getByText('Live Overlay Preview')).toBeInTheDocument();
