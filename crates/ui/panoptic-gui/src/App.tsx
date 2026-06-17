@@ -40,7 +40,7 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [updateUrl, setUpdateUrl] = useState<string | null>(null);
-  const [appVersion, setAppVersion] = useState<string>('0.0.0');
+  const [appVersion, setAppVersion] = useState<string>('Loading...');
   const [template, setTemplate] = useState('Now Playing: {title} by {artist}');
   const [overlaysCss, setOverlaysCss] = useState<Record<string, string>>({});
   const [plugins, setPlugins] = useState<PluginDef[]>([]);
@@ -53,11 +53,16 @@ function App() {
 
   const loadSettings = async () => {
     try {
+      try {
+        const ver = await invoke<string>('get_app_version');
+        setAppVersion(ver);
+      } catch (err) {
+        console.error('Failed to fetch version:', err);
+        setAppVersion('0.1.6 (fallback)');
+      }
+
       const metadata = await invoke<PluginDef[]>('get_plugins_metadata');
       setPlugins(metadata);
-
-      const ver = await invoke<string>('get_app_version');
-      setAppVersion(ver);
 
       const savedTemplate = await invoke<string | null>('get_output_template');
       if (savedTemplate !== null) {
