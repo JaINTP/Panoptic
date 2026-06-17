@@ -29,3 +29,4 @@ Panoptic ships with three high-fidelity aesthetic packs located in `examples/the
 *   **Cyber-Neon:** Futuristic high-contrast pink/cyan with glitch effects.
 *   **Eldritch Horror:** Dark void purples with organic "breathing" animations.
 *   **1990s RPG:** Classic 16-bit console UI with Royal Blue window skins.
+*   **Salem's Cauldron:** Dark mystical theme with deep purples and gold accents.

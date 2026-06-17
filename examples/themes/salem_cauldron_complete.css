@@ -1,0 +1,304 @@
+/* ════════════════════════════════════════════════════════════════
+   SALEM'S CAULDRON — Complete Master Theme
+   ════════════════════════════════════════════════════════════════
+   USAGE: Paste this entire file into ANY or ALL Panoptic CSS 
+   editors (Now Playing, Hype Train, Alerts).
+   ════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap');
+
+:root {
+  /* Global Witchy Colors */
+  --color-bg:          #07000f;
+  --color-bg-rgb:      7,0,15;
+  --color-bg-opacity:  0.93;
+  --color-primary:     #8b3fa8;
+  --color-primary-rgb: 139,63,168;
+  --color-secondary:   #d4a843;
+  --color-secondary-rgb: 212,168,67;
+  --color-text:        #ede0ff;
+  --color-subtext:     #9978bb;
+  --color-progress:    #2fba5a;
+  --color-progress-rgb: 47,186,90;
+  --color-progress-bg: #071510;
+  --color-border:      #5a2575;
+  --color-border-rgb:  90,37,117;
+  --font-family:       'Cinzel', Georgia, serif;
+
+  /* Now Playing Variables */
+  --panoptic-overlay-card-display: flex;
+  --panoptic-overlay-card-gap: 20px;
+  --panoptic-overlay-card-background: rgba(var(--color-bg-rgb), var(--color-bg-opacity));
+  --panoptic-overlay-card-border-style: solid;
+  --panoptic-overlay-card-border-width: 1px;
+  --panoptic-overlay-card-border-color: rgba(var(--color-border-rgb), 0.55);
+  --panoptic-overlay-card-backdrop-blur: 12px;
+  --panoptic-overlay-card-padding: 20px;
+  --panoptic-overlay-card-border-radius: 10px;
+  --panoptic-overlay-card-width: 420px;
+  --panoptic-overlay-card-box-shadow: 
+    0 0 0 1px rgba(var(--color-primary-rgb), 0.12),
+    0 0 30px rgba(var(--color-primary-rgb), 0.18),
+    0 0 60px rgba(var(--color-primary-rgb), 0.07),
+    inset 0 0 30px rgba(var(--color-primary-rgb), 0.04),
+    0 8px 32px rgba(0,0,0,0.7);
+  
+  --panoptic-overlay-album-art-width: 90px;
+  --panoptic-overlay-album-art-height: 90px;
+  --panoptic-overlay-album-art-border-radius: 8px;
+  
+  --panoptic-overlay-track-title-font-family: 'Cinzel Decorative', serif;
+  --panoptic-overlay-track-title-font-size: 18px;
+  --panoptic-overlay-track-title-text-color: var(--color-secondary);
+  
+  --panoptic-overlay-track-artist-text-color: var(--color-text);
+  --panoptic-overlay-track-album-text-color: var(--color-subtext);
+  
+  --panoptic-overlay-progress-bar-fill-gradient: linear-gradient(90deg, rgba(var(--color-progress-rgb), 0.8), var(--color-progress));
+  --panoptic-overlay-time-display-font-family: 'Cinzel', serif;
+
+  /* Hype Train & Alert Variables */
+  --ht-color-bg: var(--color-bg);
+  --ht-color-primary: var(--color-primary);
+  --ht-color-secondary: var(--color-secondary);
+  --ht-font-family: var(--font-family);
+}
+
+/* ── Global Styles ───────────────────────────────────────────── */
+* { box-sizing: border-box; }
+body { -webkit-font-smoothing: antialiased; }
+
+/* ── Now Playing Component (Structural) ──────────────────────── */
+.panoptic-overlay-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.panoptic-overlay-card {
+  display: var(--panoptic-overlay-card-display);
+  gap: var(--panoptic-overlay-card-gap);
+  background: var(--panoptic-overlay-card-background);
+  border: var(--panoptic-overlay-card-border-width) var(--panoptic-overlay-card-border-style) var(--panoptic-overlay-card-border-color);
+  backdrop-filter: blur(var(--panoptic-overlay-card-backdrop-blur));
+  padding: var(--panoptic-overlay-card-padding);
+  border-radius: var(--panoptic-overlay-card-border-radius);
+  width: var(--panoptic-overlay-card-width);
+  box-shadow: var(--panoptic-overlay-card-box-shadow);
+  transition: all 0.3s ease;
+  position: relative;
+  animation: cardBreathe 6s ease-in-out infinite;
+}
+
+/* Top edge shimmer line */
+.panoptic-overlay-card::before, .hype-train-card::before, .alert-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(var(--color-secondary-rgb), 0.6) 40%,
+    rgba(var(--color-secondary-rgb), 0.6) 60%,
+    transparent);
+  z-index: 2;
+}
+
+@keyframes cardBreathe {
+  0%, 100% { box-shadow:
+    0 0 0 1px rgba(var(--color-primary-rgb), 0.12),
+    0 0 25px rgba(var(--color-primary-rgb), 0.15),
+    0 0 50px rgba(var(--color-primary-rgb), 0.06),
+    inset 0 0 30px rgba(var(--color-primary-rgb), 0.04),
+    0 8px 32px rgba(0,0,0,0.7); }
+  50% { box-shadow:
+    0 0 0 1px rgba(var(--color-primary-rgb), 0.2),
+    0 0 40px rgba(var(--color-primary-rgb), 0.28),
+    0 0 80px rgba(var(--color-primary-rgb), 0.12),
+    inset 0 0 30px rgba(var(--color-primary-rgb), 0.07),
+    0 8px 32px rgba(0,0,0,0.7); }
+}
+
+.panoptic-overlay-album-art {
+  width: var(--panoptic-overlay-album-art-width);
+  height: var(--panoptic-overlay-album-art-height);
+  border-radius: var(--panoptic-overlay-album-art-border-radius);
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.panoptic-overlay-text-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.panoptic-overlay-track-title {
+  font-family: var(--panoptic-overlay-track-title-font-family);
+  font-size: var(--panoptic-overlay-track-title-font-size);
+  font-weight: 700;
+  color: var(--panoptic-overlay-track-title-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+  text-shadow: 0 0 12px rgba(212,168,67,0.4);
+}
+
+.panoptic-overlay-track-artist {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--panoptic-overlay-track-artist-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.panoptic-overlay-track-album {
+  font-size: 11px;
+  color: var(--panoptic-overlay-track-album-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 12px;
+}
+
+.panoptic-overlay-progress-container {
+  width: 100%;
+  height: 8px;
+  background: var(--color-progress-bg);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--color-progress-rgb), 0.2);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+  margin-bottom: 6px;
+}
+
+.panoptic-overlay-progress-bar {
+  height: 100%;
+  background: var(--panoptic-overlay-progress-bar-fill-gradient);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(var(--color-progress-rgb), 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer sweep */
+.panoptic-overlay-progress-bar::after, .hype-progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.28) 50%,
+    transparent 100%);
+  animation: shimmer 2s infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+.panoptic-overlay-time-display {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--panoptic-overlay-time-display-font-family);
+  font-size: 10.5px;
+  color: var(--color-subtext);
+}
+
+/* ── Hype Train & Alerts Components ─────────────────────────── */
+.hype-train-card, .alert-card {
+  width: 380px;
+  background: rgba(var(--color-bg-rgb), var(--color-bg-opacity)) !important;
+  border: 1px solid rgba(var(--color-border-rgb), 0.55) !important;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px rgba(var(--color-primary-rgb), 0.12),
+    0 0 30px rgba(var(--color-primary-rgb), 0.18),
+    0 8px 32px rgba(0,0,0,0.7) !important;
+  font-family: var(--ht-font-family);
+  color: var(--color-text);
+  position: relative;
+  overflow: hidden;
+  animation: cardBreathe 6s ease-in-out infinite;
+}
+
+.alert-card {
+  animation: toastPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+@keyframes toastPop {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.status-icon { 
+  font-size: 28px;
+  animation: cauldronBob 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(var(--color-progress-rgb), 0.6));
+}
+
+@keyframes cauldronBob {
+  0%, 100% { transform: scale(1)    rotate(-4deg); }
+  50%       { transform: scale(1.08) rotate(4deg); filter: drop-shadow(0 0 16px rgba(var(--color-progress-rgb), 0.9)); }
+}
+
+.hype-active-title {
+  font-family: 'Cinzel Decorative', serif;
+  background: linear-gradient(135deg, var(--color-text), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.hype-title {
+  font-family: 'Cinzel Decorative', serif;
+  color: var(--color-secondary);
+  text-shadow: 0 0 12px rgba(212,168,67,0.4);
+}
+
+.hype-sub, .idle-sub {
+  color: var(--color-subtext);
+  font-style: italic;
+  animation: idlePulse 4s ease-in-out infinite;
+}
+
+@keyframes idlePulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+.alert-text-content {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* ── Corner ornaments ──────────────────────────────────────────── */
+.corner {
+  position: absolute;
+  font-size: 9px;
+  color: rgba(212, 168, 67, 0.55);
+  z-index: 3;
+  line-height: 1;
+  pointer-events: none;
+  animation: cornerTwinkle 4s ease-in-out infinite;
+}
+.corner.tl { top: 7px;  left: 9px;  }
+.corner.tr { top: 7px;  right: 9px; animation-delay: 1s; }
+.corner.bl { bottom: 7px; left: 9px;  animation-delay: 2s; }
+.corner.br { bottom: 7px; right: 9px; animation-delay: 3s; }
+
+@keyframes cornerTwinkle {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 0.9; transform: scale(1.3); }
+}

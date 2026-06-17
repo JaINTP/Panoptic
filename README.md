@@ -40,6 +40,7 @@ Full support for real-time Twitch events via EventSub WebSocket:
     - **Cyber-Neon:** High-contrast pink/cyan with scanlines and glitch effects.
     - **Eldritch Horror:** Dark void purples with organic "breathing" animations.
     - **1990s RPG:** Classic 16-bit console UI with pixel-perfect borders and "Royal Blue" skins.
+    - **Salem's Cauldron:** Dark mystical theme with deep purples, gold accents, and organic animations.
 
 ### 🎵 Core Media Engine
 - **Native Detection:** Reads from **MPRIS** (Linux) and **SMTC** (Windows) with zero browser extensions.
