@@ -20,12 +20,57 @@
     }
 
     .chat-message {
-      animation: chatSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(var(--chat-blur, 0px));
+      -webkit-backdrop-filter: blur(var(--chat-blur, 0px));
     }
 
-    @keyframes chatSlideIn {
-      from { opacity: 0; transform: translateX(-20px); }
-      to { opacity: 1; transform: translateX(0); }
+    /* ── Animations ────────────────────────────────────────────── */
+    
+    .anim-slide { animation: chatSlideIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+    .anim-fade  { animation: chatFadeIn 0.4s ease both; }
+    .anim-pop   { animation: chatPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    .anim-bounce { animation: chatBounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) both; }
+
+    @keyframes chatSlideIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes chatFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes chatPopIn   { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    @keyframes chatBounceIn {
+      0%   { opacity: 0; transform: translateY(40px); }
+      60%  { opacity: 1; transform: translateY(-10px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* ── Frame Styles ──────────────────────────────────────────── */
+
+    .frame-glass {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .frame-neon {
+      border: 2px solid var(--ht-color-primary, #8b5cf6) !important;
+      box-shadow: 0 0 10px var(--ht-color-primary, #8b5cf6), inset 0 0 5px var(--ht-color-primary, #8b5cf6) !important;
+      background: rgba(0, 0, 0, 0.8) !important;
+    }
+
+    .frame-retro {
+      border: 3px double #fff !important;
+      background: #000080 !important;
+      box-shadow: 4px 4px 0 #000 !important;
+      border-radius: 0 !important;
+    }
+
+    .chat-badges-wrap span {
+      display: inline-block;
+      font-size: 0.7em;
+      padding: 1px 4px;
+      margin-right: 4px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.15);
+      font-weight: 700;
     }
   </style>
 </head>
@@ -37,7 +82,6 @@
   <script>
     let currentCssVersion = 0;
     const activeMessageIds = new Set();
-    let messageSettings = {};
 
     async function poll() {
       try {
@@ -61,11 +105,15 @@
 
     function update(messages, settings) {
       if (!messages) return;
-      messageSettings = settings || {};
       const maxMsgs = settings?.max_messages || 50;
 
       const container = document.getElementById('chat-container');
       
+      // Update global CSS variables from settings
+      if (settings?.chat_background_blur !== undefined) {
+        document.documentElement.style.setProperty('--chat-blur', `${settings.chat_background_blur}px`);
+      }
+
       messages.forEach(msg => {
         if (!activeMessageIds.has(msg.id)) {
           spawnMessage(msg, settings);
@@ -87,6 +135,15 @@
       div.id = msg.id;
       
       let classes = ['chat-message', 'panoptic-overlay-card'];
+      
+      // Add Animation Class
+      const anim = (settings?.chat_animation || 'Slide').toLowerCase();
+      classes.push(`anim-${anim}`);
+
+      // Add Frame Class
+      const frame = (settings?.chat_frame_style || 'None').toLowerCase();
+      if (frame !== 'none') classes.push(`frame-${frame}`);
+
       if (msg.is_mod) classes.push('chat-message-mod');
       if (msg.is_broadcaster) classes.push('chat-message-broadcaster');
       if (msg.is_vip) classes.push('chat-message-vip');
@@ -102,7 +159,7 @@
         : '';
       
       const badgesHtml = (showBadges && msg.badges)
-        ? `<span class="chat-badges-wrap">${msg.badges.map(b => `<span class="badge-${b.set_id}">[${b.set_id[0].toUpperCase()}]</span>`).join('')}</span>`
+        ? `<span class="chat-badges-wrap">${msg.badges.map(b => `<span class="badge-${b.set_id}">${b.set_id[0].toUpperCase()}</span>`).join('')}</span>`
         : '';
 
       const content = template

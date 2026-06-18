@@ -234,6 +234,7 @@ async fn subscribe_all_events(client_id: &str, access_token: &str, broadcaster_i
         let mut condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id });
         if sub_type == "channel.follow" { condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "moderator_user_id": broadcaster_id }); }
         if sub_type == "channel.chat.message" { condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "user_id": broadcaster_id }); }
+        if sub_type == "channel.raid" { condition = serde_json::json!({ "to_broadcaster_user_id": broadcaster_id }); }
 
         let res = client
             .post("https://api.twitch.tv/helix/eventsub/subscriptions")
