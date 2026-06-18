@@ -201,6 +201,7 @@ body { font-style: italic; }
 .chat-message {
   border-left: 3px solid var(--void-purple) !important;
   background: rgba(10, 10, 16, 0.9) !important;
+  color: var(--void-text) !important;
   animation: eldritchChatIn 0.5s ease both;
   font-family: var(--ht-font-family);
 }

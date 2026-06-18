@@ -189,6 +189,7 @@ body { font-family: 'Press Start 2P', cursive !important; text-transform: upperc
   border: 2px solid var(--rpg-white) !important;
   box-shadow: 2px 2px 0 #000 !important;
   background: var(--rpg-blue) !important;
+  color: #ffffff !important;
   margin-bottom: 4px;
 }
 
@@ -198,4 +199,8 @@ body { font-family: 'Press Start 2P', cursive !important; text-transform: upperc
 
 .chat-text {
   font-size: 8px !important;
+}
+
+.chat-pronouns {
+  color: var(--rpg-gold);
 }
