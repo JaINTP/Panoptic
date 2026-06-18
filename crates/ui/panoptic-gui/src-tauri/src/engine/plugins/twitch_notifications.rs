@@ -235,7 +235,7 @@ async fn subscribe_all_events(client_id: &str, access_token: &str, broadcaster_i
         if sub_type == "channel.follow" { condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "moderator_user_id": broadcaster_id }); }
         if sub_type == "channel.chat.message" { condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "user_id": broadcaster_id }); }
 
-        let _ = client
+        let res = client
             .post("https://api.twitch.tv/helix/eventsub/subscriptions")
             .header("Client-ID", client_id)
             .header("Authorization", format!("Bearer {}", access_token))
@@ -244,6 +244,14 @@ async fn subscribe_all_events(client_id: &str, access_token: &str, broadcaster_i
                 "transport": { "method": "websocket", "session_id": session_id }
             }))
             .send().await;
+
+        if let Ok(r) = res {
+            if !r.status().is_success() {
+                warn!("Twitch EventSub: Failed to subscribe to {} (v{}): {}", sub_type, version, r.text().await.unwrap_or_default());
+            } else {
+                info!("Twitch EventSub: Successfully subscribed to {}", sub_type);
+            }
+        }
     }
     Ok(())
 }
@@ -377,24 +385,40 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
                         let settings = AppSettings::load(&app_handle_inner);
                         let client_id = settings.plugins.get("twitch").and_then(|v| v.get("client_id")).and_then(|v| v.as_str()).unwrap_or("").to_string();
                         if client_id.is_empty() { return; }
-                        if let Ok(info) = fetch_broadcaster_info(&client_id, &access_token).await {
-                            { let mut lock = manager_inner.broadcaster_info.lock().unwrap(); *lock = info.clone(); }
-                            loop {
-                                if let Ok((mut ws, _)) = connect_async("wss://eventsub.wss.twitch.tv/ws").await {
-                                    while let Some(Ok(Message::Text(text))) = ws.next().await {
-                                        if let Ok(msg) = serde_json::from_str::<TwitchEventSubMessage>(&text) {
-                                            if let Some(meta) = msg.metadata {
-                                                match meta.message_type.as_str() {
-                                                    "session_welcome" => { if let Some(s) = msg.payload.and_then(|p| p.session) { let _ = subscribe_all_events(&client_id, &access_token, &info.id, &s.id).await; } }
-                                                    "notification" => { if let (Some(payload), Some(sub_type)) = (msg.payload, meta.subscription_type) { if let Some(event) = payload.event { handle_event(&app_handle_inner, &manager_inner, &sub_type, event).await; } } }
-                                                    _ => {}
+                        match fetch_broadcaster_info(&client_id, &access_token).await {
+                            Ok(info) => {
+                                info!("Twitch EventSub: Starting WebSocket loop for broadcaster: {} ({})", info.display_name, info.id);
+                                { let mut lock = manager_inner.broadcaster_info.lock().unwrap(); *lock = info.clone(); }
+                                loop {
+                                    if let Ok((mut ws, _)) = connect_async("wss://eventsub.wss.twitch.tv/ws").await {
+                                        info!("Twitch EventSub: WebSocket connected.");
+                                        while let Some(Ok(Message::Text(text))) = ws.next().await {
+                                            if let Ok(msg) = serde_json::from_str::<TwitchEventSubMessage>(&text) {
+                                                if let Some(meta) = msg.metadata {
+                                                    match meta.message_type.as_str() {
+                                                        "session_welcome" => {
+                                                            if let Some(s) = msg.payload.and_then(|p| p.session) {
+                                                                let _ = subscribe_all_events(&client_id, &access_token, &info.id, &s.id).await;
+                                                            }
+                                                        }
+                                                        "notification" => {
+                                                            if let (Some(payload), Some(sub_type)) = (msg.payload, meta.subscription_type) {
+                                                                if let Some(event) = payload.event {
+                                                                    handle_event(&app_handle_inner, &manager_inner, &sub_type, event).await;
+                                                                }
+                                                            }
+                                                        }
+                                                        _ => {}
+                                                    }
                                                 }
                                             }
                                         }
+                                        warn!("Twitch EventSub: WebSocket disconnected, retrying in 5s...");
                                     }
+                                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                                 }
-                                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-                            }
+                            },
+                            Err(e) => error!("Twitch EventSub: Failed to fetch broadcaster info: {}. WebSocket loop will not start.", e),
                         }
                     }));
                 } else if matches!(state, AuthState::Unauthenticated) { if let Some(t) = current_task.take() { t.abort(); } }
@@ -476,20 +500,26 @@ impl PanopticPlugin for TwitchChatPlugin {
         })
     }
     fn handle_action(&self, action: &str, app: &tauri::AppHandle) -> Result<serde_json::Value, String> {
+        use tauri::Emitter;
         if action == "test_msg" {
             let app_handle = app.clone(); let manager = self.manager.clone();
             tauri::async_runtime::spawn(async move {
                 let info = { let lock = manager.broadcaster_info.lock().unwrap(); lock.clone() };
-                let msg = serde_json::json!({
-                    "message_id": format!("test_{}", rand::random::<u16>()),
-                    "chatter_user_id": if info.id.is_empty() { "123".into() } else { info.id },
-                    "chatter_user_login": if info.login.is_empty() { "streamer".into() } else { info.login },
-                    "chatter_user_name": if info.display_name.is_empty() { "Streamer".into() } else { info.display_name },
-                    "message": { "text": "This is a test message! 🚀" },
-                    "color": "#8b5cf6",
-                    "badges": [ { "set_id": "broadcaster", "id": "1", "info": "" } ]
-                });
-                handle_event(&app_handle, &manager, "channel.chat.message", msg).await;
+                let msg = ChatMessageData {
+                    id: format!("test_{}", rand::random::<u16>()),
+                    user_id: if info.id.is_empty() { "123".into() } else { info.id },
+                    user_login: if info.login.is_empty() { "streamer".into() } else { info.login },
+                    user_name: if info.display_name.is_empty() { "Streamer".into() } else { info.display_name },
+                    message: "This is a test message! 🚀".to_string(),
+                    color: "#8b5cf6".to_string(),
+                    pronouns: Some("they/them".to_string()),
+                    badges: vec![ ChatBadge { set_id: "broadcaster".to_string(), id: "1".to_string(), info: "".to_string() } ],
+                    is_mod: false, is_sub: false, is_vip: false, is_broadcaster: true,
+                    timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
+                };
+                let _ = app_handle.emit("twitch_chat_message", msg.clone());
+                let mut state = manager.chat_state.lock().unwrap();
+                state.messages.push(msg);
             });
             Ok(serde_json::json!({ "status": "sent" }))
         } else { Err("Unknown action".to_string()) }
