@@ -58,6 +58,8 @@ pub struct AlertState {
     pub active_alerts: Vec<QueuedAlert>,
 }
 
+/* ── Chat Models ──────────────────────────────────────────────── */
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatBadge {
     pub set_id: String,
@@ -67,12 +69,20 @@ pub struct ChatBadge {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "type", content = "data")]
+pub enum ChatFragment {
+    Text(String),
+    Emote { id: String, text: String, url: String },
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatMessageData {
     pub id: String,
     pub user_id: String,
     pub user_login: String,
     pub user_name: String,
-    pub message: String,
+    pub message: String, // Full text fallback
+    pub fragments: Vec<ChatFragment>,
     pub color: String,
     pub pronouns: Option<String>,
     pub badges: Vec<ChatBadge>,
@@ -80,7 +90,6 @@ pub struct ChatMessageData {
     pub is_sub: bool,
     pub is_vip: bool,
     pub is_broadcaster: bool,
-    pub is_staff: bool,
     pub timestamp: u64,
 }
 
@@ -121,6 +130,12 @@ struct EventSubSession {
     id: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct PronounEntry {
+    name: String,
+    display: String,
+}
+
 /* ── Shared Event Manager ─────────────────────────────────────── */
 
 pub struct TwitchEventManager {
@@ -130,7 +145,8 @@ pub struct TwitchEventManager {
     pub broadcaster_info: Arc<Mutex<TwitchBroadcasterInfo>>,
     pub pronoun_map: Arc<Mutex<HashMap<String, String>>>,
     pub user_pronoun_cache: Arc<Mutex<HashMap<String, String>>>,
-    pub badge_cache: Arc<Mutex<HashMap<String, HashMap<String, String>>>>, // set_id -> version -> url
+    pub badge_cache: Arc<Mutex<HashMap<String, HashMap<String, String>>>>,
+    pub emote_cache: Arc<Mutex<HashMap<String, String>>>, // id -> url
 }
 
 impl TwitchEventManager {
@@ -153,49 +169,76 @@ impl TwitchEventManager {
             pronoun_map: Arc::new(Mutex::new(HashMap::new())),
             user_pronoun_cache: Arc::new(Mutex::new(HashMap::new())),
             badge_cache: Arc::new(Mutex::new(HashMap::new())),
+            emote_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
-    pub async fn fetch_all_badges(&self, client_id: &str, token: &str, broadcaster_id: &str) {
-        info!("Twitch Chat: Refreshing badge image cache...");
-        
+    pub async fn fetch_metadata(&self, client_id: &str, token: &str, broadcaster_id: &str) {
+        info!("Twitch Chat: Refreshing metadata cache (badges & emotes)...");
+        self.fetch_all_badges(client_id, token, broadcaster_id).await;
+        self.fetch_all_emotes(client_id, token, broadcaster_id).await;
+    }
+
+    async fn fetch_all_badges(&self, client_id: &str, token: &str, broadcaster_id: &str) {
         let client = reqwest::Client::new();
         let mut new_cache: HashMap<String, HashMap<String, String>> = HashMap::new();
 
-        // 1. Fetch Global Badges
-        let global_url = "https://api.twitch.tv/helix/chat/badges/global";
-        if let Ok(res) = client.get(global_url).header("Client-ID", client_id).header("Authorization", format!("Bearer {}", token)).send().await {
-            if let Ok(data) = res.json::<serde_json::Value>().await {
-                self.parse_badge_response(&mut new_cache, data);
-            }
+        // Global
+        if let Ok(res) = client.get("https://api.twitch.tv/helix/chat/badges/global").header("Client-ID", client_id).header("Authorization", format!("Bearer {}", token)).send().await {
+            if let Ok(data) = res.json::<serde_json::Value>().await { self.parse_badge_response(&mut new_cache, data); }
         }
-
-        // 2. Fetch Channel Badges
-        let channel_url = format!("https://api.twitch.tv/helix/chat/badges?broadcaster_id={}", broadcaster_id);
-        if let Ok(res) = client.get(channel_url).header("Client-ID", client_id).header("Authorization", format!("Bearer {}", token)).send().await {
-            if let Ok(data) = res.json::<serde_json::Value>().await {
-                self.parse_badge_response(&mut new_cache, data);
-            }
+        // Channel
+        let url = format!("https://api.twitch.tv/helix/chat/badges?broadcaster_id={}", broadcaster_id);
+        if let Ok(res) = client.get(url).header("Client-ID", client_id).header("Authorization", format!("Bearer {}", token)).send().await {
+            if let Ok(data) = res.json::<serde_json::Value>().await { self.parse_badge_response(&mut new_cache, data); }
         }
 
         let mut cache = self.badge_cache.lock().unwrap();
         *cache = new_cache;
-        info!("Twitch Chat: Badge cache updated ({} sets loaded)", cache.len());
+        info!("Twitch Chat: Badge cache updated ({} sets)", cache.len());
     }
 
     fn parse_badge_response(&self, cache: &mut HashMap<String, HashMap<String, String>>, data: serde_json::Value) {
         if let Some(sets) = data["data"].as_array() {
             for set in sets {
                 let set_id = set["set_id"].as_str().unwrap_or_default().to_string();
-                let versions_map = cache.entry(set_id).or_default();
-                
-                if let Some(versions) = set["versions"].as_array() {
-                    for v in versions {
+                let versions = cache.entry(set_id).or_default();
+                if let Some(v_arr) = set["versions"].as_array() {
+                    for v in v_arr {
                         let id = v["id"].as_str().unwrap_or_default().to_string();
                         let url = v["image_url_1x"].as_str().unwrap_or_default().to_string();
-                        versions_map.insert(id, url);
+                        versions.insert(id, url);
                     }
                 }
+            }
+        }
+    }
+
+    async fn fetch_all_emotes(&self, client_id: &str, token: &str, broadcaster_id: &str) {
+        let client = reqwest::Client::new();
+        let mut new_cache: HashMap<String, String> = HashMap::new();
+
+        // Global
+        if let Ok(res) = client.get("https://api.twitch.tv/helix/chat/emotes/global").header("Client-ID", client_id).header("Authorization", format!("Bearer {}", token)).send().await {
+            if let Ok(data) = res.json::<serde_json::Value>().await { self.parse_emote_response(&mut new_cache, data); }
+        }
+        // Channel
+        let url = format!("https://api.twitch.tv/helix/chat/emotes?broadcaster_id={}", broadcaster_id);
+        if let Ok(res) = client.get(url).header("Client-ID", client_id).header("Authorization", format!("Bearer {}", token)).send().await {
+            if let Ok(data) = res.json::<serde_json::Value>().await { self.parse_emote_response(&mut new_cache, data); }
+        }
+
+        let mut cache = self.emote_cache.lock().unwrap();
+        *cache = new_cache;
+        info!("Twitch Chat: Emote cache updated ({} emotes)", cache.len());
+    }
+
+    fn parse_emote_response(&self, cache: &mut HashMap<String, String>, data: serde_json::Value) {
+        if let Some(emotes) = data["data"].as_array() {
+            for e in emotes {
+                let id = e["id"].as_str().unwrap_or_default().to_string();
+                let url = e["images"]["url_1x"].as_str().unwrap_or_default().to_string();
+                cache.insert(id, url);
             }
         }
     }
@@ -204,7 +247,8 @@ impl TwitchEventManager {
         let client = reqwest::Client::new();
         match client.get("https://api.pronouns.alejo.io/api/pronouns").send().await {
             Ok(res) => {
-                if let Ok(map) = res.json::<HashMap<String, String>>().await {
+                if let Ok(entries) = res.json::<Vec<PronounEntry>>().await {
+                    let map: HashMap<String, String> = entries.into_iter().map(|e| (e.name, e.display)).collect();
                     let mut p_map = self.pronoun_map.lock().unwrap();
                     *p_map = map;
                     info!("Twitch Chat: Initialized pronouns map ({} entries)", p_map.len());
@@ -219,12 +263,10 @@ impl TwitchEventManager {
             let cache = self.user_pronoun_cache.lock().unwrap();
             if let Some(p) = cache.get(login) { return Some(p.clone()); }
         }
-
         {
             let is_empty = self.pronoun_map.lock().unwrap().is_empty();
             if is_empty { self.init_pronouns().await; }
         }
-
         let client = reqwest::Client::new();
         let url = format!("https://api.pronouns.alejo.io/api/users/{}", login);
         match client.get(&url).send().await {
@@ -372,8 +414,9 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
         "channel.chat.message" => {
             let user_login = event["chatter_user_login"].as_str().unwrap_or_default().to_string();
             let pronouns = manager.get_user_pronouns(&user_login).await;
-            let mut badges = Vec::new();
             
+            // Resolve Badges
+            let mut badges = Vec::new();
             {
                 let b_cache = manager.badge_cache.lock().unwrap();
                 if let Some(arr) = event["badges"].as_array() {
@@ -381,12 +424,34 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
                         let set_id = b["set_id"].as_str().unwrap_or_default().to_string();
                         let id = b["id"].as_str().unwrap_or_default().to_string();
                         let info = b["info"].as_str().unwrap_or_default().to_string();
-                        
-                        // Resolve image URL from cache
                         let image_url = b_cache.get(&set_id).and_then(|v| v.get(&id)).cloned();
-                        
                         badges.push(ChatBadge { set_id, id, info, image_url });
                     }
+                }
+            }
+
+            // Resolve Fragments (Emotes)
+            let mut fragments = Vec::new();
+            {
+                let e_cache = manager.emote_cache.lock().unwrap();
+                if let Some(arr) = event["message"]["fragments"].as_array() {
+                    for f in arr {
+                        let f_type = f["type"].as_str().unwrap_or("text");
+                        if f_type == "emote" {
+                            let id = f["emote"]["id"].as_str().unwrap_or_default().to_string();
+                            let text = f["text"].as_str().unwrap_or_default().to_string();
+                            // If not in cache, construct standard Twitch URL
+                            let url = e_cache.get(&id).cloned().unwrap_or_else(|| {
+                                format!("https://static-cdn.jtvnw.net/emoticons/v2/{}/default/dark/1.0", id)
+                            });
+                            fragments.push(ChatFragment::Emote { id, text, url });
+                        } else {
+                            fragments.push(ChatFragment::Text(f["text"].as_str().unwrap_or_default().to_string()));
+                        }
+                    }
+                } else {
+                    // Fallback to plain text if no fragments
+                    fragments.push(ChatFragment::Text(event["message"]["text"].as_str().unwrap_or_default().to_string()));
                 }
             }
 
@@ -394,7 +459,6 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
             let is_mod = badges.iter().any(|b| b.set_id == "moderator");
             let is_vip = badges.iter().any(|b| b.set_id == "vip");
             let is_sub = badges.iter().any(|b| b.set_id == "subscriber");
-            let is_staff = badges.iter().any(|b| b.set_id == "staff");
 
             let mut state = manager.chat_state.lock().unwrap();
             let msg = ChatMessageData {
@@ -403,8 +467,9 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
                 user_login,
                 user_name: event["chatter_user_name"].as_str().unwrap_or_default().to_string(),
                 message: event["message"]["text"].as_str().unwrap_or_default().to_string(),
+                fragments,
                 color: event["color"].as_str().unwrap_or("#ffffff").to_string(),
-                pronouns, badges, is_mod, is_sub, is_vip, is_broadcaster, is_staff,
+                pronouns, badges, is_mod, is_sub, is_vip, is_broadcaster,
                 timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
             };
             state.messages.push(msg.clone());
@@ -453,10 +518,7 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
                             Ok(info) => {
                                 info!("Twitch EventSub: Starting WebSocket loop for broadcaster: {} ({})", info.display_name, info.id);
                                 { let mut lock = manager_inner.broadcaster_info.lock().unwrap(); *lock = info.clone(); }
-                                
-                                // Fetch badges before starting loop
-                                manager_inner.fetch_all_badges(&client_id, &access_token, &info.id).await;
-
+                                manager_inner.fetch_metadata(&client_id, &access_token, &info.id).await;
                                 loop {
                                     if let Ok((mut ws, _)) = connect_async("wss://eventsub.wss.twitch.tv/ws").await {
                                         info!("Twitch EventSub: WebSocket connected.");
@@ -606,10 +668,14 @@ impl PanopticPlugin for TwitchChatPlugin {
                     user_login: if info.login.is_empty() { "streamer".into() } else { info.login },
                     user_name: if info.display_name.is_empty() { "Streamer".into() } else { info.display_name },
                     message: "This is a test message! 🚀".to_string(),
+                    fragments: vec![
+                        ChatFragment::Text("This is a test message! ".to_string()),
+                        ChatFragment::Emote { id: "1".into(), text: "🚀".into(), url: "https://static-cdn.jtvnw.net/emoticons/v2/1/default/dark/1.0".into() }
+                    ],
                     color: "#8b5cf6".to_string(),
                     pronouns: Some("they/them".to_string()),
                     badges: vec![ ChatBadge { set_id: "broadcaster".to_string(), id: "1".to_string(), info: "".to_string(), image_url: Some("https://static-cdn.jtvnw.net/chat/badges/5527358c-052c-4c76-8251-0f8d99bc732e/1".to_string()) } ],
-                    is_mod: false, is_sub: false, is_vip: false, is_broadcaster: true, is_staff: false,
+                    is_mod: false, is_sub: false, is_vip: false, is_broadcaster: true,
                     timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
                 };
                 let _ = app_handle.emit("twitch_chat_message", msg.clone());

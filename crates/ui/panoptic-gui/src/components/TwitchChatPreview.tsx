@@ -4,7 +4,12 @@ export interface ChatBadge {
   set_id: string;
   id: string;
   info: string;
+  image_url?: string;
 }
+
+export type ChatFragment = 
+  | { type: 'Text', data: string }
+  | { type: 'Emote', data: { id: string, text: string, url: string } };
 
 export interface ChatMessageData {
   id: string;
@@ -12,6 +17,7 @@ export interface ChatMessageData {
   user_login: string;
   user_name: string;
   message: string;
+  fragments: ChatFragment[];
   color: string;
   pronouns?: string;
   badges: ChatBadge[];
@@ -44,14 +50,21 @@ export const TwitchChatPreview: React.FC<TwitchChatPreviewProps> = ({ state, set
     const pronounsHtml = (showPronouns && msg.pronouns) ? `<span class="chat-pronouns">[${msg.pronouns}]</span>` : '';
     const badgesHtml = showBadges ? `<span class="chat-badges-wrap">${msg.badges.map(b => {
         if (b.image_url) {
-            return `<img src="${b.image_url}" class="chat-badge" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;" />`;
+            return `<img src="${b.image_url}" class="chat-badge" style="width: 18px; height: 18px; margin-right: 4px; vertical-align: middle;" />`;
         }
-        return `<span class="badge-${b.set_id}">[${b.set_id[0].toUpperCase()}]</span>`;
+        return `<span class="badge-${b.set_id}" style="font-size: 10px; margin-right: 4px;">[${b.set_id[0].toUpperCase()}]</span>`;
     }).join('')}</span>` : '';
+
+    const fragmentsHtml = msg.fragments.map(f => {
+        if (f.type === 'Emote') {
+            return `<img src="${f.data.url}" class="chat-emote" style="width: 24px; height: 24px; vertical-align: middle; margin: -2px 0;" title="${f.data.text}" />`;
+        }
+        return `<span>${f.data}</span>`;
+    }).join('');
 
     let content = template
       .replace('{user}', `<span class="chat-username" style="color: ${msg.color}">${msg.user_name}</span>`)
-      .replace('{message}', `<span class="chat-text">${msg.message}</span>`)
+      .replace('{message}', `<span class="chat-text">${fragmentsHtml}</span>`)
       .replace('{pronouns}', pronounsHtml)
       .replace('{badges}', badgesHtml);
     
