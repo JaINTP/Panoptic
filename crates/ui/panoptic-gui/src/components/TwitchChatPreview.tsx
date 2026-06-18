@@ -42,7 +42,12 @@ export const TwitchChatPreview: React.FC<TwitchChatPreviewProps> = ({ state, set
 
   const getMessageContent = (msg: ChatMessageData) => {
     const pronounsHtml = (showPronouns && msg.pronouns) ? `<span class="chat-pronouns">[${msg.pronouns}]</span>` : '';
-    const badgesHtml = showBadges ? `<span class="chat-badges-wrap">${msg.badges.map(b => `<span class="badge-${b.set_id}">[${b.set_id[0].toUpperCase()}]</span>`).join('')}</span>` : '';
+    const badgesHtml = showBadges ? `<span class="chat-badges-wrap">${msg.badges.map(b => {
+        if (b.image_url) {
+            return `<img src="${b.image_url}" class="chat-badge" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;" />`;
+        }
+        return `<span class="badge-${b.set_id}">[${b.set_id[0].toUpperCase()}]</span>`;
+    }).join('')}</span>` : '';
 
     let content = template
       .replace('{user}', `<span class="chat-username" style="color: ${msg.color}">${msg.user_name}</span>`)

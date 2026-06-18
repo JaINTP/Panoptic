@@ -76,22 +76,35 @@
       border-radius: 0 !important;
     }
 
-    .chat-badges-wrap span {
+    .chat-badges-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .chat-badge {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      border-radius: 2px;
+    }
+
+    .chat-badge-text {
       display: inline-block;
       font-size: 0.7em;
       padding: 1px 4px;
-      margin-right: 4px;
       border-radius: 3px;
       background: rgba(255, 255, 255, 0.15);
       font-weight: 700;
-      vertical-align: middle;
       line-height: 1;
     }
 
-    .chat-badges-wrap .badge-broadcaster { color: #ffd700; border: 1px solid rgba(255,215,0,0.3); }
-    .chat-badges-wrap .badge-moderator   { color: #00ff7f; border: 1px solid rgba(0,255,127,0.3); }
-    .chat-badges-wrap .badge-vip         { color: #ff69b4; border: 1px solid rgba(255,105,180,0.3); }
-    .chat-badges-wrap .badge-subscriber  { color: #87ceeb; border: 1px solid rgba(135,206,235,0.3); }
+    .badge-broadcaster { color: #ffd700; border: 1px solid rgba(255,215,0,0.3); }
+    .badge-moderator   { color: #00ff7f; border: 1px solid rgba(0,255,127,0.3); }
+    .badge-vip         { color: #ff69b4; border: 1px solid rgba(255,105,180,0.3); }
+    .badge-subscriber  { color: #87ceeb; border: 1px solid rgba(135,206,235,0.3); }
   </style>
 </head>
 <body>
@@ -179,7 +192,12 @@
         : '';
       
       const badgesHtml = (showBadges && msg.badges)
-        ? `<span class="chat-badges-wrap">${msg.badges.map(b => `<span class="badge-${b.set_id}">${b.set_id[0].toUpperCase()}</span>`).join('')}</span>`
+        ? `<span class="chat-badges-wrap">${msg.badges.map(b => {
+            if (b.image_url) {
+                return `<img class="chat-badge" src="${b.image_url}" title="${b.set_id}">`;
+            }
+            return `<span class="chat-badge-text badge-${b.set_id}">${b.set_id[0].toUpperCase()}</span>`;
+          }).join('')}</span>`
         : '';
 
       const content = template
