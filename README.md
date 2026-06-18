@@ -121,6 +121,9 @@ For detailed technical documentation on how to fully customize or extend Panopti
 - [**Twitch Alerts CSS Guide**](docs/Twitch-Alerts-CSS.md) - Variables for dynamic stacking and professional transitions.
 - [**Plugin Development Guide**](docs/Plugin-Development.md) - How to extend Panoptic with your own Rust-based modules.
 
+### 🗺️ Roadmap
+Interested in where Panoptic is headed? Check out our [**Product Roadmap**](ROADMAP.md) for a list of upcoming plugins and core engine improvements.
+
 ---
 
 ## Installation & Building
