@@ -30,3 +30,9 @@ Panoptic ships with three high-fidelity aesthetic packs located in `examples/the
 *   **Eldritch Horror:** Dark void purples with organic "breathing" animations.
 *   **1990s RPG:** Classic 16-bit console UI with Royal Blue window skins.
 *   **Salem's Cauldron:** Dark mystical theme with deep purples and gold accents.
+
+---
+
+## Next Steps
+
+If you are a developer looking to add new functionality or custom integrations beyond visual styling, check out our [**Plugin Development Guide**](Plugin-Development.md).

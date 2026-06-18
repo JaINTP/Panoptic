@@ -67,7 +67,7 @@ Panoptic/
 
 ### Plugin System
 
-Every feature in Panoptic implements the `PanopticPlugin` trait. This trait allows plugins to hook into the application lifecycle and provide UI definitions.
+Every feature in Panoptic implements the `PanopticPlugin` trait. This trait allows plugins to hook into the application lifecycle and provide UI definitions. For a detailed guide on creating your own plugins, see the [**Plugin Development Guide**](docs/Plugin-Development.md).
 
 ```rust
 pub trait PanopticPlugin: Send + Sync {
@@ -113,12 +113,13 @@ Add a new Browser source in OBS and point it to:
 
 The overlays pull their CSS directly from your Panoptic configuration.
 
-### 📖 Theming Wiki
-For detailed technical documentation on how to fully customize every aspect of your overlays, visit the **Theming Wiki**:
+### 📖 Project Documentation
+For detailed technical documentation on how to fully customize or extend Panoptic, visit the following guides:
 - [**Theming Overview**](docs/Theming-Overview.md) - How the CSS engine and side-by-side editor work.
 - [**Now Playing CSS Guide**](docs/Now-Playing-CSS.md) - Variables for layout, typography, and progress.
 - [**Hype Train CSS Guide**](docs/Hype-Train-CSS.md) - Variables for progress tiers and leaderboards.
 - [**Twitch Alerts CSS Guide**](docs/Twitch-Alerts-CSS.md) - Variables for dynamic stacking and professional transitions.
+- [**Plugin Development Guide**](docs/Plugin-Development.md) - How to extend Panoptic with your own Rust-based modules.
 
 ---
 
