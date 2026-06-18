@@ -34,7 +34,7 @@ Full support for real-time Twitch events via EventSub WebSocket:
 - **Lifecycle Management:** Customisable alert duration and a "Keep Last Alert" mode to ensure your stream always has a visual anchor.
 - **Live Chat Overlay:** Real-time chat with full badge and emote image resolution, pronoun display, and configurable frame/animation styles.
 
-> **Note:** After updating to v0.1.9, Twitch API credentials must be re-linked. The plugin state was restructured — re-authenticate via **Settings → Twitch** before use.
+> **Note:** After updating to v0.1.9, Twitch API credentials must be re-linked. The plugin state was restructured - re-authenticate via **Settings → Twitch** before use.
 
 ### 🎨 High-Fidelity Theming
 - **Live CSS Editor:** Side-by-side workspace with a real-time preview. Styles are injected instantly as you type.
