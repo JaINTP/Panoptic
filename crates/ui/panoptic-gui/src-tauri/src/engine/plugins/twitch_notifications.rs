@@ -80,6 +80,7 @@ pub struct ChatMessageData {
     pub is_sub: bool,
     pub is_vip: bool,
     pub is_broadcaster: bool,
+    pub is_staff: bool,
     pub timestamp: u64,
 }
 
@@ -393,6 +394,7 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
             let is_mod = badges.iter().any(|b| b.set_id == "moderator");
             let is_vip = badges.iter().any(|b| b.set_id == "vip");
             let is_sub = badges.iter().any(|b| b.set_id == "subscriber");
+            let is_staff = badges.iter().any(|b| b.set_id == "staff");
 
             let mut state = manager.chat_state.lock().unwrap();
             let msg = ChatMessageData {
@@ -402,7 +404,7 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
                 user_name: event["chatter_user_name"].as_str().unwrap_or_default().to_string(),
                 message: event["message"]["text"].as_str().unwrap_or_default().to_string(),
                 color: event["color"].as_str().unwrap_or("#ffffff").to_string(),
-                pronouns, badges, is_mod, is_sub, is_vip, is_broadcaster,
+                pronouns, badges, is_mod, is_sub, is_vip, is_broadcaster, is_staff,
                 timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
             };
             state.messages.push(msg.clone());
@@ -607,7 +609,7 @@ impl PanopticPlugin for TwitchChatPlugin {
                     color: "#8b5cf6".to_string(),
                     pronouns: Some("they/them".to_string()),
                     badges: vec![ ChatBadge { set_id: "broadcaster".to_string(), id: "1".to_string(), info: "".to_string(), image_url: Some("https://static-cdn.jtvnw.net/chat/badges/5527358c-052c-4c76-8251-0f8d99bc732e/1".to_string()) } ],
-                    is_mod: false, is_sub: false, is_vip: false, is_broadcaster: true,
+                    is_mod: false, is_sub: false, is_vip: false, is_broadcaster: true, is_staff: false,
                     timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
                 };
                 let _ = app_handle.emit("twitch_chat_message", msg.clone());
