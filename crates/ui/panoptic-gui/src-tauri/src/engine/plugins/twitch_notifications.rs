@@ -1,5 +1,5 @@
 use crate::engine::settings::AppSettings;
-use axum::{routing::get, Router};
+use axum::{routing::get, Router, extract::State as AxumState};
 use futures_util::StreamExt;
 use panoptic_core::{
     AppState, AuthState, PanopticPlugin, PluginCategory, PluginSettingsDefinition, SettingField,
@@ -169,17 +169,12 @@ impl TwitchEventManager {
     pub async fn get_user_pronouns(&self, login: &str) -> Option<String> {
         {
             let cache = self.user_pronoun_cache.lock().unwrap();
-            if let Some(p) = cache.get(login) {
-                return Some(p.clone());
-            }
+            if let Some(p) = cache.get(login) { return Some(p.clone()); }
         }
 
-        // If map is empty, try to init it once
         {
             let is_empty = self.pronoun_map.lock().unwrap().is_empty();
-            if is_empty {
-                self.init_pronouns().await;
-            }
+            if is_empty { self.init_pronouns().await; }
         }
 
         let client = reqwest::Client::new();
@@ -253,7 +248,7 @@ async fn subscribe_all_events(client_id: &str, access_token: &str, broadcaster_i
         if sub_type == "channel.chat.message" { condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "user_id": broadcaster_id }); }
         if sub_type == "channel.raid" { condition = serde_json::json!({ "to_broadcaster_user_id": broadcaster_id }); }
 
-        let res = client
+        let _ = client
             .post("https://api.twitch.tv/helix/eventsub/subscriptions")
             .header("Client-ID", client_id)
             .header("Authorization", format!("Bearer {}", access_token))
@@ -262,14 +257,6 @@ async fn subscribe_all_events(client_id: &str, access_token: &str, broadcaster_i
                 "transport": { "method": "websocket", "session_id": session_id }
             }))
             .send().await;
-
-        if let Ok(r) = res {
-            if !r.status().is_success() {
-                warn!("Twitch EventSub: Failed to subscribe to {} (v{}): {}", sub_type, version, r.text().await.unwrap_or_default());
-            } else {
-                info!("Twitch EventSub: Successfully subscribed to {}", sub_type);
-            }
-        }
     }
     Ok(())
 }
@@ -428,28 +415,16 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
                                                                         }
                                                                     }
                                                                 }
-                                                                "session_keepalive" => {
-                                                                    // Quietly ignore keepalives
-                                                                }
-                                                                _ => {
-                                                                    info!("Twitch EventSub: Received message type: {}", meta.message_type);
-                                                                }
+                                                                _ => {}
                                                             }
                                                         }
                                                     }
                                                 }
-                                                Ok(Message::Close(frame)) => {
-                                                    warn!("Twitch EventSub: WebSocket closed by server: {:?}", frame);
-                                                    break;
-                                                }
-                                                Err(e) => {
-                                                    error!("Twitch EventSub: WebSocket error: {}", e);
-                                                    break;
-                                                }
+                                                Ok(Message::Close(frame)) => { warn!("Twitch EventSub: WebSocket closed: {:?}", frame); break; }
+                                                Err(e) => { error!("Twitch EventSub: WebSocket error: {}", e); break; }
                                                 _ => {}
                                             }
                                         }
-                                        warn!("Twitch EventSub: WebSocket disconnected, retrying in 5s...");
                                     }
                                     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                                 }
@@ -464,8 +439,14 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
     }
     fn register_routes(&self, router: Router<AppState>) -> Router<AppState> {
         let hype_state = self.manager.hype_state.clone();
-        router.route("/twitch/hype-train", get(move || { let state = hype_state.lock().unwrap().clone(); async move { axum::Json(state) } }))
-              .route("/overlay/twitch/hype-train", get(panoptic_server::handlers::twitch::get_twitch_hype_train_overlay))
+        router.route("/twitch/hype-train", get(move |AxumState(app_state): AxumState<AppState>| {
+            let state = hype_state.lock().unwrap().clone();
+            let settings = if let Some(path) = app_state.settings_path {
+                let settings = std::fs::read_to_string(path).ok().and_then(|s| serde_json::from_str::<AppSettings>(&s).ok());
+                settings.and_then(|s| s.plugins.get("twitch_hype_train").cloned()).unwrap_or_else(|| serde_json::json!({}))
+            } else { serde_json::json!({}) };
+            async move { axum::Json(serde_json::json!({ "state": state, "settings": settings })) }
+        })).route("/overlay/twitch/hype-train", get(panoptic_server::handlers::twitch::get_twitch_hype_train_overlay))
     }
     fn settings_definition(&self) -> Option<PluginSettingsDefinition> {
         Some(PluginSettingsDefinition {
@@ -491,8 +472,14 @@ impl PanopticPlugin for TwitchAlertsPlugin {
     fn name(&self) -> &'static str { "Twitch Alerts" }
     fn register_routes(&self, router: Router<AppState>) -> Router<AppState> {
         let alert_state = self.manager.alert_state.clone();
-        router.route("/twitch/alerts", get(move || { let state = alert_state.lock().unwrap().clone(); async move { axum::Json(state) } }))
-              .route("/overlay/twitch/alerts", get(panoptic_server::handlers::twitch::get_twitch_alerts_overlay))
+        router.route("/twitch/alerts", get(move |AxumState(app_state): AxumState<AppState>| {
+            let state = alert_state.lock().unwrap().clone();
+            let settings = if let Some(path) = app_state.settings_path {
+                let settings = std::fs::read_to_string(path).ok().and_then(|s| serde_json::from_str::<AppSettings>(&s).ok());
+                settings.and_then(|s| s.plugins.get("twitch_alerts").cloned()).unwrap_or_else(|| serde_json::json!({}))
+            } else { serde_json::json!({}) };
+            async move { axum::Json(serde_json::json!({ "active_alerts": state.active_alerts, "settings": settings })) }
+        })).route("/overlay/twitch/alerts", get(panoptic_server::handlers::twitch::get_twitch_alerts_overlay))
     }
     fn settings_definition(&self) -> Option<PluginSettingsDefinition> {
         Some(PluginSettingsDefinition {
@@ -520,8 +507,14 @@ impl PanopticPlugin for TwitchChatPlugin {
     fn name(&self) -> &'static str { "Twitch Chat" }
     fn register_routes(&self, router: Router<AppState>) -> Router<AppState> {
         let chat_state = self.manager.chat_state.clone();
-        router.route("/twitch/chat", get(move || { let state = chat_state.lock().unwrap().clone(); async move { axum::Json(state) } }))
-              .route("/overlay/twitch/chat", get(panoptic_server::handlers::twitch::get_twitch_chat_overlay))
+        router.route("/twitch/chat", get(move |AxumState(app_state): AxumState<AppState>| {
+            let state = chat_state.lock().unwrap().clone();
+            let settings = if let Some(path) = app_state.settings_path {
+                let settings = std::fs::read_to_string(path).ok().and_then(|s| serde_json::from_str::<AppSettings>(&s).ok());
+                settings.and_then(|s| s.plugins.get("twitch_chat").cloned()).unwrap_or_else(|| serde_json::json!({}))
+            } else { serde_json::json!({}) };
+            async move { axum::Json(serde_json::json!({ "messages": state.messages, "settings": settings })) }
+        })).route("/overlay/twitch/chat", get(panoptic_server::handlers::twitch::get_twitch_chat_overlay))
     }
     fn settings_definition(&self) -> Option<PluginSettingsDefinition> {
         Some(PluginSettingsDefinition {
