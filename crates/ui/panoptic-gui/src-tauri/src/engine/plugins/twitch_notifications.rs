@@ -527,7 +527,7 @@ impl PanopticPlugin for TwitchChatPlugin {
         Some(PluginSettingsDefinition {
             category: PluginCategory::Overlay,
             fields: vec![
-                SettingField { key: "message_template".into(), label: "Message Template".into(), description: Some("Format: {badges} {pronouns} {user}: {message}".into()), field_type: SettingFieldType::Text, default_value: serde_json::json!("{pronouns} {user}: {message}") },
+                SettingField { key: "message_template".into(), label: "Message Template".into(), description: Some("Format: {badges} {pronouns} {user}: {message}".into()), field_type: SettingFieldType::Text, default_value: serde_json::json!("{badges} {pronouns} {user}: {message}") },
                 SettingField { key: "chat_animation".into(), label: "Entrance Animation".into(), description: Some("Choose how messages appear.".into()), field_type: SettingFieldType::Select { options: vec!["Slide".into(), "Fade".into(), "Pop".into(), "Bounce".into()] }, default_value: serde_json::json!("Slide") },
                 SettingField { key: "chat_frame_style".into(), label: "Frame Style".into(), description: Some("Add decorative elements to messages.".into()), field_type: SettingFieldType::Select { options: vec!["None".into(), "Glass".into(), "Neon".into(), "Retro".into()] }, default_value: serde_json::json!("None") },
                 SettingField { key: "chat_background_blur".into(), label: "Background Blur (px)".into(), description: Some("Glass-morphism effect intensity.".into()), field_type: SettingFieldType::Number, default_value: serde_json::json!(0) },
