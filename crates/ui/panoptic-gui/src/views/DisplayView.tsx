@@ -9,6 +9,7 @@ import { OverlayPreview, PlaybackState } from '../components/OverlayPreview';
 import { HypeTrainPreview, HypeTrainState } from '../components/HypeTrainPreview';
 import { TwitchAlertPreview, AlertState } from '../components/TwitchAlertPreview';
 import { TwitchChatPreview, ChatState, ChatMessageData } from '../components/TwitchChatPreview';
+import { PomodoroPreview, PomodoroState, DEFAULT_POMODORO_STATE } from '../components/PomodoroPreview';
 import { SettingsField, PluginDef } from '../components/SettingsField';
 import { TwitchAlertPlaceholderGrid } from '../components/TwitchAlertPlaceholderGrid';
 import { TwitchChatPlaceholderGrid } from '../components/TwitchChatPlaceholderGrid';
@@ -163,6 +164,8 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
     messages: [],
   });
 
+  const [pomodoroState, setPomodoroState] = useState<PomodoroState>(DEFAULT_POMODORO_STATE);
+
   const focusedInputRef = useRef<{ pluginId: string, key: string } | null>(null);
 
   useEffect(() => {
@@ -182,12 +185,16 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
         return { messages: newMsgs };
       });
     });
+    const unlistenPomodoro = listen<PomodoroState>('pomodoro_tick', (event) => {
+      setPomodoroState(event.payload);
+    });
 
     return () => {
       unlistenHype.then(f => f());
       unlistenHypeClear.then(f => f());
       unlistenAlert.then(f => f());
       unlistenChat.then(f => f());
+      unlistenPomodoro.then(f => f());
     };
   }, []);
 
@@ -399,6 +406,12 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
               state={chatState}
               settings={pluginSettings['twitch_chat'] || {}}
             />
+          </div>
+        );
+      case 'pomodoro':
+        return (
+          <div style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
+            <PomodoroPreview state={pomodoroState} />
           </div>
         );
       default:

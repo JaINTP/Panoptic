@@ -1,5 +1,5 @@
-import React from 'react';
-import { Monitor, HardDrive, ShieldCheck, Type } from 'lucide-react';
+import React, { useState } from 'react';
+import { Monitor, HardDrive, ShieldCheck, Type, X, ExternalLink } from 'lucide-react';
 
 export type View = 'storage' | 'auth' | 'output' | 'display';
 
@@ -18,6 +18,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   handleOpenUpdate,
   version,
 }) => {
+  const [dismissed, setDismissed] = useState(false);
+  const showUpdate = !!updateVersion && !dismissed;
+
   return (
     <nav className="sidebar">
       <div className="sidebar-title">PANOPTIC v{version}</div>
@@ -49,33 +52,72 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <Type size={18} /> Output
       </button>
-      {updateVersion && (
-        <div
-          onClick={handleOpenUpdate}
-          style={{
-            margin: 'auto 14px 14px 14px',
-            padding: '10px 12px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(167, 139, 250, 0.08) 100%)',
-            border: '1px solid rgba(139, 92, 246, 0.35)',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
-            transition: 'all 0.2s ease',
-            textAlign: 'left',
-          }}
-        >
-          <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Update Available
-          </span>
-          <span style={{ fontSize: '12.5px', fontWeight: '600', color: '#ffffff' }}>
-            Version {updateVersion}
-          </span>
-          <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
-            Click to view release
-          </span>
+
+      {/* Update link - shown only when a newer GitHub release exists and not dismissed */}
+      {showUpdate && (
+        <div style={{
+          marginTop: 'auto',
+          marginBottom: '12px',
+          marginLeft: '10px',
+          marginRight: '10px',
+          padding: '8px 10px',
+          borderRadius: '6px',
+          background: 'rgba(139, 92, 246, 0.08)',
+          border: '1px solid rgba(139, 92, 246, 0.22)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+        }}>
+          <button
+            type="button"
+            onClick={handleOpenUpdate}
+            title={`v${updateVersion} is available on GitHub`}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              color: 'var(--accent-primary)',
+              fontSize: '12px',
+              fontWeight: 600,
+              textAlign: 'left',
+              minWidth: 0,
+            }}
+          >
+            <ExternalLink size={12} style={{ flexShrink: 0, opacity: 0.8 }} />
+            <span style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              v{updateVersion} available
+            </span>
+          </button>
+          <button
+            type="button"
+            aria-label="Dismiss update notification"
+            onClick={(e) => { e.stopPropagation(); setDismissed(true); }}
+            style={{
+              flexShrink: 0,
+              background: 'none',
+              border: 'none',
+              padding: '2px',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              borderRadius: '3px',
+              opacity: 0.6,
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.6'; }}
+          >
+            <X size={12} />
+          </button>
         </div>
       )}
     </nav>

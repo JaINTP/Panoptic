@@ -35,10 +35,11 @@ Enable viewers to manipulate overlay visuals directly using Twitch Bits.
 - **Status:** Concept
 - **Key Feature:** "Chaos Mode"—large cheers can trigger temporary global glitch or glow effects.
 
-### ⏲️ Pomodoro / BRB Timer
-Themed countdown timers for focus sessions or break screens.
-- **Status:** Planning
-- **Key Feature:** Automation hooks—pause music or trigger alerts when the timer expires.
+### ~~⏲️ Pomodoro / BRB Timer~~
+~~Themed countdown timers for focus sessions or break screens.~~
+- ~~**Status:** Planning~~
+- ~~**Key Feature:** Automation hooks—pause music or trigger alerts when the timer expires.~~
+- **Shipped in v0.2.0:** Work/break cycle timer with configurable durations, session dots, circular progress ring overlay, phase-complete automation event (`pomodoro_phase_complete`), and full CSS variable theming.
 
 ## 🛠️ Core Engine Improvements
 

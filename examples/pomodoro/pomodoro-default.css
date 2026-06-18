@@ -1,0 +1,63 @@
+/*
+ * Panoptic Pomodoro Timer - Default Theme
+ *
+ * All values below are the built-in defaults.  Copy this into the
+ * Custom CSS editor and adjust to match your stream theme.
+ *
+ * Overlay URL: http://localhost:3000/overlay/pomodoro
+ *
+ * Available CSS variables
+ * -----------------------
+ * Layout
+ *   --pomodoro-card-gap          gap between card elements (default 12px)
+ *   --pomodoro-card-padding      card inner padding         (default 20px 24px)
+ *   --pomodoro-card-min-width    minimum card width         (default 200px)
+ *   --pomodoro-card-radius       border radius              (default 12px)
+ *   --pomodoro-card-blur         backdrop blur              (default 12px)
+ *
+ * Colours
+ *   --pomodoro-card-bg           card background            (default rgba(15,15,20,0.88))
+ *   --pomodoro-card-border-color card border colour         (default rgba(139,92,246,0.35))
+ *   --pomodoro-card-border-width card border width          (default 1px)
+ *   --pomodoro-card-shadow       card box shadow
+ *
+ * Phase label
+ *   --pomodoro-phase-font        font family
+ *   --pomodoro-phase-size        font size                  (default 11px)
+ *   --pomodoro-phase-color       colour per phase (see per-phase vars below)
+ *
+ * Ring
+ *   --pomodoro-ring-size         SVG diameter               (default 120px)
+ *   --pomodoro-ring-width        stroke width               (default 6)
+ *   --pomodoro-ring-track-color  unfilled track colour
+ *   --pomodoro-ring-color        fill colour (per-phase)
+ *
+ * Time display
+ *   --pomodoro-time-font         font family
+ *   --pomodoro-time-size         font size                  (default 26px)
+ *   --pomodoro-time-color        colour                     (default #ffffff)
+ *
+ * Status line
+ *   --pomodoro-status-font       font family
+ *   --pomodoro-status-size       font size                  (default 9px)
+ *   --pomodoro-status-color      colour when paused         (default rgba(255,255,255,0.4))
+ *   --pomodoro-status-running-color colour when running     (default #4ade80)
+ *
+ * Session dots
+ *   --pomodoro-dot-size          dot diameter               (default 8px)
+ *   --pomodoro-dots-gap          gap between dots           (default 6px)
+ *   --pomodoro-dot-empty-color   unfilled dot background
+ *   --pomodoro-dot-border-color  unfilled dot border
+ *   --pomodoro-dot-filled-color  filled dot colour (per-phase)
+ *
+ * Per-phase overrides
+ *   --pomodoro-work-phase-color / --pomodoro-work-ring-color / --pomodoro-work-dot-color
+ *   --pomodoro-short-break-phase-color / --pomodoro-short-break-ring-color / ...
+ *   --pomodoro-long-break-phase-color  / --pomodoro-long-break-ring-color  / ...
+ */
+
+/* Position the card in the top-right corner */
+#pomodoro-root {
+  top: 20px;
+  right: 20px;
+}
