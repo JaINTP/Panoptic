@@ -1,5 +1,11 @@
 import React from 'react';
 
+export interface ChatBadge {
+  set_id: string;
+  id: string;
+  info: string;
+}
+
 export interface ChatMessageData {
   id: string;
   user_id: string;
@@ -8,6 +14,11 @@ export interface ChatMessageData {
   message: string;
   color: string;
   pronouns?: string;
+  badges: ChatBadge[];
+  is_mod: bool;
+  is_sub: bool;
+  is_vip: bool;
+  is_broadcaster: bool;
   timestamp: number;
 }
 
@@ -23,6 +34,18 @@ interface TwitchChatPreviewProps {
 export const TwitchChatPreview: React.FC<TwitchChatPreviewProps> = ({ state, settings }) => {
   const messages = state.messages || [];
   const showPronouns = settings.show_pronouns ?? true;
+  const showBadges = settings.show_badges ?? true;
+  const template = settings.message_template || "{pronouns} {user}: {message}";
+
+  const getMessageContent = (msg: ChatMessageData) => {
+    let content = template
+      .replace('{user}', `<span class="chat-username" style="color: ${msg.color}">${msg.user_name}</span>`)
+      .replace('{message}', `<span class="chat-text">${msg.message}</span>`)
+      .replace('{pronouns}', (showPronouns && msg.pronouns) ? `<span class="chat-pronouns">[${msg.pronouns}]</span>` : '')
+      .replace('{badges}', showBadges ? `<span class="chat-badges-wrap">${msg.badges.map(b => `<span class="badge-${b.set_id}">[${b.set_id[0].toUpperCase()}]</span>`).join('')}</span>` : '');
+    
+    return content;
+  };
 
   return (
     <div className="panoptic-overlay-wrapper twitch-chat-preview" style={{ height: '300px', overflowY: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '10px' }}>
@@ -35,27 +58,14 @@ export const TwitchChatPreview: React.FC<TwitchChatPreviewProps> = ({ state, set
           messages.slice(-4).map((msg) => (
             <div 
               key={msg.id} 
-              className="chat-message panoptic-overlay-card"
+              className={`chat-message panoptic-overlay-card ${msg.is_mod ? 'chat-message-mod' : ''} ${msg.is_broadcaster ? 'chat-message-broadcaster' : ''} ${msg.is_vip ? 'chat-message-vip' : ''} ${msg.is_sub ? 'chat-message-sub' : ''}`}
               style={{ 
                 width: '100%',
                 padding: '10px',
                 animation: 'chatSlideIn 0.3s ease both'
               }}
-            >
-              <div className="chat-header" style={{ marginBottom: '4px', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                {showPronouns && msg.pronouns && (
-                  <span className="chat-pronouns" style={{ fontSize: '10px', opacity: 0.6, fontWeight: 700 }}>
-                    [{msg.pronouns}]
-                  </span>
-                )}
-                <span className="chat-username" style={{ color: msg.color, fontWeight: 900, fontSize: '13px' }}>
-                  {msg.user_name}
-                </span>
-              </div>
-              <div className="chat-text" style={{ fontSize: '12px', line_height: '1.4' }}>
-                {msg.message}
-              </div>
-            </div>
+              dangerouslySetInnerHTML={{ __html: getMessageContent(msg) }}
+            />
           ))
         )}
       </div>

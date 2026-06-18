@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import CodeMirror from '@uiw/react-codemirror';
 import { css, cssLanguage } from '@codemirror/lang-css';
@@ -11,6 +12,7 @@ import { TwitchAlertPreview, AlertState } from '../components/TwitchAlertPreview
 import { TwitchChatPreview, ChatState, ChatMessageData } from '../components/TwitchChatPreview';
 import { SettingsField, PluginDef } from '../components/SettingsField';
 import { TwitchAlertPlaceholderGrid } from '../components/TwitchAlertPlaceholderGrid';
+import { TwitchChatPlaceholderGrid } from '../components/TwitchChatPlaceholderGrid';
 
 // Autocomplete and Lint helpers
 const PANOPTIC_CLASSES = [
@@ -35,7 +37,16 @@ const PANOPTIC_CLASSES = [
   { label: '.status-icon', type: 'class', detail: 'Status indicator icon' },
   { label: '.alert-card', type: 'class', detail: 'Alert notification card' },
   { label: '.alert-node', type: 'class', detail: 'Alert stack entry' },
-  { label: '.alert-text-content', type: 'class', detail: 'Text within an alert' }
+  { label: '.alert-text-content', type: 'class', detail: 'Text within an alert' },
+  { label: '.chat-message', type: 'class', detail: 'Individual chat message' },
+  { label: '.chat-message-broadcaster', type: 'class', detail: 'Message from broadcaster' },
+  { label: '.chat-message-mod', type: 'class', detail: 'Message from moderator' },
+  { label: '.chat-message-vip', type: 'class', detail: 'Message from VIP' },
+  { label: '.chat-message-sub', type: 'class', detail: 'Message from subscriber' },
+  { label: '.chat-header', type: 'class', detail: 'Chat message header' },
+  { label: '.chat-username', type: 'class', detail: 'Chatter username' },
+  { label: '.chat-pronouns', type: 'class', detail: 'Chatter pronouns' },
+  { label: '.chat-text', type: 'class', detail: 'Chat message body' }
 ];
 
 const PANOPTIC_VARS = [
@@ -195,51 +206,107 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
     updatePluginSetting(pluginId, key, currentVal + placeholder);
   };
 
+  const getOverlayUrl = (id: string) => {
+    const base = 'http://localhost:3000';
+    switch (id) {
+      case 'now_playing': return `${base}/overlay/now-playing`;
+      case 'twitch_hype_train': return `${base}/overlay/twitch/hype-train`;
+      case 'twitch_alerts': return `${base}/overlay/twitch/alerts`;
+      case 'twitch_chat': return `${base}/overlay/twitch/chat`;
+      default: return `${base}/overlay/${id}`;
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   const renderTextSettings = () => {
+    const overlayUrl = getOverlayUrl(activeOverlay);
+    const urlDisplay = (
+      <div className="section" style={{ margin: '0 0 20px 0' }}>
+        <h2 className="section-title">Browser Source URL</h2>
+        <div className="settings-card" style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          background: 'rgba(0,0,0,0.3)',
+          padding: '10px 14px',
+          borderRadius: '6px',
+          border: '1px dashed var(--border)'
+        }}>
+          <code style={{ 
+            flex: 1, 
+            fontSize: '11px', 
+            color: 'var(--accent-primary)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {overlayUrl}
+          </code>
+          <button 
+            onClick={() => copyToClipboard(overlayUrl)}
+            style={{
+              padding: '4px 10px',
+              fontSize: '10px',
+              background: 'var(--bg-app)',
+              border: '1px solid var(--border)',
+              borderRadius: '4px',
+              color: 'var(--text-main)',
+              cursor: 'pointer'
+            }}
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+    );
+
     if (activeOverlay === 'now_playing') {
       return (
-        <div className="section" style={{ margin: 0 }}>
-          <h2 className="section-title">Fallback Text</h2>
-          <div className="settings-card" style={{ border: 'none', background: 'transparent', padding: 0 }}>
-            <SettingsField
-              field={{
-                key: 'not_playing_title',
-                label: 'Fallback Title',
-                description: 'Shown when no track is playing',
-                field_type: { type: 'Text' },
-                default_value: 'Not Playing'
-              }}
-              category="overlay"
-              currentValue={notPlayingSettings.not_playing_title}
-              onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
-              onTriggerAction={() => {}}
-            />
-            <SettingsField
-              field={{
-                key: 'not_playing_artist',
-                label: 'Fallback Artist',
-                description: 'Shown when no track is playing',
-                field_type: { type: 'Text' },
-                default_value: 'Unknown Artist'
-              }}
-              category="overlay"
-              currentValue={notPlayingSettings.not_playing_artist}
-              onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
-              onTriggerAction={() => {}}
-            />
-            <SettingsField
-              field={{
-                key: 'not_playing_album',
-                label: 'Fallback Album',
-                description: 'Shown when no track is playing',
-                field_type: { type: 'Text' },
-                default_value: 'Unknown Album'
-              }}
-              category="overlay"
-              currentValue={notPlayingSettings.not_playing_album}
-              onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
-              onTriggerAction={() => {}}
-            />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {urlDisplay}
+          <div className="section" style={{ margin: 0 }}>
+            <h2 className="section-title">Fallback Text</h2>
+            <div className="settings-card" style={{ border: 'none', background: 'transparent', padding: 0 }}>
+              <SettingsField
+                field={{
+                  key: 'not_playing_title',
+                  label: 'Fallback Title',
+                  description: 'Shown when no track is playing',
+                  field_type: { type: 'Text' },
+                  default_value: 'Not Playing'
+                }}
+                currentValue={notPlayingSettings.not_playing_title}
+                onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
+                onTriggerAction={() => {}}
+              />
+              <SettingsField
+                field={{
+                  key: 'not_playing_artist',
+                  label: 'Fallback Artist',
+                  description: 'Shown when no track is playing',
+                  field_type: { type: 'Text' },
+                  default_value: 'Unknown Artist'
+                }}
+                currentValue={notPlayingSettings.not_playing_artist}
+                onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
+                onTriggerAction={() => {}}
+              />
+              <SettingsField
+                field={{
+                  key: 'not_playing_album',
+                  label: 'Fallback Album',
+                  description: 'Shown when no track is playing',
+                  field_type: { type: 'Text' },
+                  default_value: 'Unknown Album'
+                }}
+                currentValue={notPlayingSettings.not_playing_album}
+                onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
+                onTriggerAction={() => {}}
+              />
+            </div>
           </div>
         </div>
       );
@@ -247,6 +314,7 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {urlDisplay}
             {plugins
             .filter((p) => p.category === 'overlay' && p.id === activeOverlay)
             .map((plugin) => (
@@ -278,6 +346,13 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
                 <div className="section" style={{ margin: 0 }}>
                     <h2 className="section-title">Available Variables (Click to Insert)</h2>
                     <TwitchAlertPlaceholderGrid onInsertPlaceholder={handleInsertAlertPlaceholder} />
+                </div>
+            )}
+
+            {activeOverlay === 'twitch_chat' && (
+                <div className="section" style={{ margin: 0 }}>
+                    <h2 className="section-title">Available Variables (Click to Insert)</h2>
+                    <TwitchChatPlaceholderGrid onInsertPlaceholder={handleInsertAlertPlaceholder} />
                 </div>
             )}
         </div>

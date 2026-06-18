@@ -82,6 +82,13 @@ pub struct AlertState {
 /* ── Chat State ───────────────────────────────────────────────── */
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ChatBadge {
+    pub set_id: String,
+    pub id: String,
+    pub info: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatMessageData {
     pub id: String,
     pub user_id: String,
@@ -90,6 +97,11 @@ pub struct ChatMessageData {
     pub message: String,
     pub color: String,
     pub pronouns: Option<String>,
+    pub badges: Vec<ChatBadge>,
+    pub is_mod: bool,
+    pub is_sub: bool,
+    pub is_vip: bool,
+    pub is_broadcaster: bool,
     pub timestamp: u64,
 }
 
@@ -393,21 +405,47 @@ async fn handle_event(
         }
         "channel.chat.message" => {
             let user_login = event["chatter_user_login"].as_str().unwrap_or_default().to_string();
+            let broadcaster_id = event["broadcaster_user_id"].as_str().unwrap_or_default();
+            let user_id = event["chatter_user_id"].as_str().unwrap_or_default();
+            
+            // Check for commands or bot filtering in future if needed
+            
             let pronouns = manager.get_user_pronouns(&user_login).await;
             
+            let mut badges = Vec::new();
+            if let Some(badges_arr) = event["badges"].as_array() {
+                for b in badges_arr {
+                    badges.push(ChatBadge {
+                        set_id: b["set_id"].as_str().unwrap_or_default().to_string(),
+                        id: b["id"].as_str().unwrap_or_default().to_string(),
+                        info: b["info"].as_str().unwrap_or_default().to_string(),
+                    });
+                }
+            }
+
+            let is_broadcaster = user_id == broadcaster_id;
+            let is_mod = badges.iter().any(|b| b.set_id == "moderator");
+            let is_vip = badges.iter().any(|b| b.set_id == "vip");
+            let is_sub = badges.iter().any(|b| b.set_id == "subscriber");
+
             let mut state = manager.chat_state.lock().unwrap();
             let msg = ChatMessageData {
                 id: event["message_id"].as_str().unwrap_or_default().to_string(),
-                user_id: event["chatter_user_id"].as_str().unwrap_or_default().to_string(),
+                user_id: user_id.to_string(),
                 user_login,
                 user_name: event["chatter_user_name"].as_str().unwrap_or_default().to_string(),
                 message: event["message"]["text"].as_str().unwrap_or_default().to_string(),
                 color: event["color"].as_str().unwrap_or("#ffffff").to_string(),
                 pronouns,
+                badges,
+                is_mod,
+                is_sub,
+                is_vip,
+                is_broadcaster,
                 timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
             };
             state.messages.push(msg.clone());
-            if state.messages.len() > 50 {
+            if state.messages.len() > 100 { // Max limit
                 state.messages.remove(0);
             }
             let _ = app.emit("twitch_chat_message", msg);
@@ -453,7 +491,6 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
             let mut rx = auth_rx;
             let mut current_task: Option<tokio::task::JoinHandle<()>> = None;
 
-            // Initialize pronouns map
             manager.init_pronouns().await;
 
             while rx.changed().await.is_ok() {
@@ -619,7 +656,9 @@ impl PanopticPlugin for TwitchChatPlugin {
         Some(PluginSettingsDefinition {
             category: PluginCategory::Overlay,
             fields: vec![
+                SettingField { key: "message_template".into(), label: "Message Template".into(), description: Some("Format of the chat message.".into()), field_type: SettingFieldType::Text, default_value: serde_json::json!("{pronouns} {user}: {message}") },
                 SettingField { key: "show_pronouns".into(), label: "Show Pronouns".into(), description: Some("Display user pronouns from alejo.io.".into()), field_type: SettingFieldType::Boolean, default_value: serde_json::json!(true) },
+                SettingField { key: "show_badges".into(), label: "Show Badges".into(), description: Some("Display Twitch role badges.".into()), field_type: SettingFieldType::Boolean, default_value: serde_json::json!(true) },
                 SettingField { key: "max_messages".into(), label: "Max Messages".into(), description: Some("Number of messages to keep in history.".into()), field_type: SettingFieldType::Number, default_value: serde_json::json!(50) },
                 SettingField { key: "test_chat".into(), label: "Test Chat".into(), description: None, field_type: SettingFieldType::Action { button_label: "Simulate Message".into(), action_name: "test_msg".into() }, default_value: serde_json::Value::Null },
             ],
@@ -637,7 +676,11 @@ impl PanopticPlugin for TwitchChatPlugin {
                     "chatter_user_login": "salem_the_witch",
                     "chatter_user_name": "Salem",
                     "message": { "text": "Hello from the cauldron! 🔮" },
-                    "color": "#8b3fa8"
+                    "color": "#8b3fa8",
+                    "badges": [
+                        { "set_id": "broadcaster", "id": "1", "info": "" },
+                        { "set_id": "subscriber", "id": "12", "info": "" }
+                    ]
                 });
                 handle_event(&app_handle, &manager, "channel.chat.message", msg).await;
             });
