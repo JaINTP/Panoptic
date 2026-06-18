@@ -21,6 +21,9 @@ fn default_css(overlay_id: &str) -> String {
         "twitch_chat" => {
             include_str!("../../../../../examples/themes/cyber_complete.css").to_string()
         }
+        "pomodoro" => {
+            include_str!("../../../../../examples/pomodoro/pomodoro-default.css").to_string()
+        }
         _ => String::new(),
     }
 }

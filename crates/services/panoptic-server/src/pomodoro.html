@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panoptic Pomodoro</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link id="overlay-style" rel="stylesheet" href="/overlay/pomodoro/style.css">
+  <style>
+    body {
+      background: transparent;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Default layout - streamers override via custom CSS */
+    #pomodoro-root {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      pointer-events: none;
+    }
+
+    .pomodoro-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--pomodoro-card-gap, 12px);
+      padding: var(--pomodoro-card-padding, 20px 24px);
+      background: var(--pomodoro-card-bg, rgba(15, 15, 20, 0.88));
+      border: var(--pomodoro-card-border-width, 1px) solid var(--pomodoro-card-border-color, rgba(139, 92, 246, 0.35));
+      border-radius: var(--pomodoro-card-radius, 12px);
+      backdrop-filter: blur(var(--pomodoro-card-blur, 12px));
+      -webkit-backdrop-filter: blur(var(--pomodoro-card-blur, 12px));
+      box-shadow: var(--pomodoro-card-shadow, 0 4px 32px rgba(0, 0, 0, 0.45));
+      min-width: var(--pomodoro-card-min-width, 200px);
+    }
+
+    /* Phase label */
+    .pomodoro-phase {
+      font-family: var(--pomodoro-phase-font, 'Inter', sans-serif);
+      font-size: var(--pomodoro-phase-size, 11px);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--pomodoro-phase-color, #a78bfa);
+    }
+
+    /* Circular progress ring */
+    .pomodoro-ring-wrap {
+      position: relative;
+      width: var(--pomodoro-ring-size, 120px);
+      height: var(--pomodoro-ring-size, 120px);
+    }
+
+    .pomodoro-ring-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .pomodoro-ring-track {
+      fill: none;
+      stroke: var(--pomodoro-ring-track-color, rgba(139, 92, 246, 0.15));
+      stroke-width: var(--pomodoro-ring-width, 6);
+    }
+
+    .pomodoro-ring-fill {
+      fill: none;
+      stroke: var(--pomodoro-ring-color, #7c3aed);
+      stroke-width: var(--pomodoro-ring-width, 6);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.9s linear;
+    }
+
+    /* Time text overlaid on ring */
+    .pomodoro-time-wrap {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .pomodoro-time {
+      font-family: var(--pomodoro-time-font, 'JetBrains Mono', monospace);
+      font-size: var(--pomodoro-time-size, 26px);
+      font-weight: 700;
+      color: var(--pomodoro-time-color, #ffffff);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .pomodoro-status {
+      font-family: var(--pomodoro-status-font, 'Inter', sans-serif);
+      font-size: var(--pomodoro-status-size, 9px);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--pomodoro-status-color, rgba(255, 255, 255, 0.4));
+    }
+
+    .pomodoro-status.running {
+      color: var(--pomodoro-status-running-color, #4ade80);
+    }
+
+    /* Session dots */
+    .pomodoro-dots {
+      display: flex;
+      gap: var(--pomodoro-dots-gap, 6px);
+      align-items: center;
+    }
+
+    .pomodoro-dot {
+      width: var(--pomodoro-dot-size, 8px);
+      height: var(--pomodoro-dot-size, 8px);
+      border-radius: 50%;
+      background: var(--pomodoro-dot-empty-color, rgba(139, 92, 246, 0.2));
+      border: 1px solid var(--pomodoro-dot-border-color, rgba(139, 92, 246, 0.35));
+      transition: background 0.3s ease;
+    }
+
+    .pomodoro-dot.filled {
+      background: var(--pomodoro-dot-filled-color, #7c3aed);
+      border-color: var(--pomodoro-dot-filled-color, #7c3aed);
+    }
+
+    /* Work vs break phase colour shifts */
+    .pomodoro-card[data-phase="work"] {
+      --pomodoro-phase-color: var(--pomodoro-work-phase-color, #a78bfa);
+      --pomodoro-ring-color: var(--pomodoro-work-ring-color, #7c3aed);
+      --pomodoro-dot-filled-color: var(--pomodoro-work-dot-color, #7c3aed);
+    }
+
+    .pomodoro-card[data-phase="short_break"] {
+      --pomodoro-phase-color: var(--pomodoro-short-break-phase-color, #34d399);
+      --pomodoro-ring-color: var(--pomodoro-short-break-ring-color, #059669);
+      --pomodoro-dot-filled-color: var(--pomodoro-short-break-dot-color, #059669);
+    }
+
+    .pomodoro-card[data-phase="long_break"] {
+      --pomodoro-phase-color: var(--pomodoro-long-break-phase-color, #60a5fa);
+      --pomodoro-ring-color: var(--pomodoro-long-break-ring-color, #2563eb);
+      --pomodoro-dot-filled-color: var(--pomodoro-long-break-dot-color, #2563eb);
+    }
+  </style>
+</head>
+<body>
+  <div id="pomodoro-root">
+    <div class="pomodoro-card" id="card" data-phase="work">
+      <div class="pomodoro-phase" id="phase-label">Work</div>
+
+      <div class="pomodoro-ring-wrap">
+        <svg class="pomodoro-ring-svg" viewBox="0 0 120 120" id="ring-svg">
+          <circle class="pomodoro-ring-track" cx="60" cy="60" r="52" />
+          <circle class="pomodoro-ring-fill" cx="60" cy="60" r="52" id="ring-fill" />
+        </svg>
+        <div class="pomodoro-time-wrap">
+          <span class="pomodoro-time" id="time-display">25:00</span>
+          <span class="pomodoro-status" id="status-label">Paused</span>
+        </div>
+      </div>
+
+      <div class="pomodoro-dots" id="dots-row"></div>
+    </div>
+  </div>
+
+  <script>
+    const POLL_INTERVAL_MS = 1000;
+
+    const ringFill       = document.getElementById('ring-fill');
+    const phaseLabel     = document.getElementById('phase-label');
+    const timeDisplay    = document.getElementById('time-display');
+    const statusLabel    = document.getElementById('status-label');
+    const dotsRow        = document.getElementById('dots-row');
+    const card           = document.getElementById('card');
+
+    const CIRCUMFERENCE  = 2 * Math.PI * 52; // r=52
+
+    ringFill.style.strokeDasharray  = CIRCUMFERENCE;
+    ringFill.style.strokeDashoffset = 0;
+
+    const PHASE_LABELS = {
+      work:        'Work',
+      short_break: 'Short Break',
+      long_break:  'Long Break',
+    };
+
+    function formatTime(secs) {
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function buildDots(completed, sessionsBeforeLong) {
+      dotsRow.innerHTML = '';
+      const count = sessionsBeforeLong || 4;
+      const filled = completed % count;
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'pomodoro-dot' + (i < filled ? ' filled' : '');
+        dotsRow.appendChild(dot);
+      }
+    }
+
+    function render(state) {
+      const pct = state.total_secs > 0
+        ? state.remaining_secs / state.total_secs
+        : 0;
+
+      // Ring fill - offset decreases as time passes (full at start)
+      ringFill.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+
+      phaseLabel.textContent  = PHASE_LABELS[state.phase] || state.phase;
+      timeDisplay.textContent = formatTime(state.remaining_secs);
+
+      card.setAttribute('data-phase', state.phase);
+
+      statusLabel.textContent = state.is_running ? 'Running' : 'Paused';
+      statusLabel.className   = 'pomodoro-status' + (state.is_running ? ' running' : '');
+
+      buildDots(state.completed_sessions, state.sessions_before_long_break);
+    }
+
+    let currentCssVersion = 0;
+
+    async function checkCssVersion() {
+      try {
+        const res = await fetch('/overlay/version');
+        const data = await res.json();
+        if (data.version !== currentCssVersion) {
+          currentCssVersion = data.version;
+          const link = document.getElementById('overlay-style');
+          if (link) {
+            link.href = `/overlay/pomodoro/style.css?v=${currentCssVersion}`;
+          }
+        }
+      } catch (_) {}
+    }
+
+    async function poll() {
+      try {
+        const res   = await fetch('/pomodoro/state');
+        const state = await res.json();
+        render(state);
+      } catch (_) {}
+
+      checkCssVersion();
+    }
+
+    // Initial render with defaults so something shows immediately
+    render({
+      phase: 'work',
+      remaining_secs: 1500,
+      total_secs: 1500,
+      is_running: false,
+      completed_sessions: 0,
+      sessions_before_long_break: 4,
+    });
+
+    setInterval(poll, POLL_INTERVAL_MS);
+    poll();
+  </script>
+</body>
+</html>

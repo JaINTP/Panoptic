@@ -7,6 +7,7 @@ pub mod engine {
     pub mod settings;
     pub mod plugins {
         pub mod mpris_smtc;
+        pub mod pomodoro;
         pub mod spotify;
         pub mod twitch;
         pub mod twitch_notifications;
@@ -64,6 +65,9 @@ pub fn run() {
         ))
         .register(Box::new(
             crate::engine::plugins::twitch_notifications::TwitchChatPlugin::new(twitch_manager),
+        ))
+        .register(Box::new(
+            crate::engine::plugins::pomodoro::PomodoroPlugin::new(),
         ));
 
     let plugins = registry.plugins;

@@ -40,3 +40,7 @@ pkg/arch/*.pkg.tar.zst
 __pycache__/
 *.py[cod]
 .pytest_cache/
+
+# Cowork / Claude internal tool files
+.omc/
+.claude/settings.local.json
