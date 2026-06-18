@@ -12,7 +12,7 @@
       overflow: hidden; 
       margin: 0; 
       padding: 0;
-      color: #ffffff;
+      color: #ffffff !important;
       font-family: 'Rajdhani', sans-serif;
     }
     #chat-container {
@@ -32,11 +32,11 @@
       overflow: hidden;
       backdrop-filter: blur(var(--chat-blur, 0px));
       -webkit-backdrop-filter: blur(var(--chat-blur, 0px));
-      color: #ffffff; /* Explicit safety net */
+      color: #ffffff !important;
     }
 
     .chat-text {
-      color: #ffffff; /* Explicit safety net */
+      color: #ffffff !important;
     }
 
     /* ── Animations ────────────────────────────────────────────── */
@@ -115,12 +115,17 @@
   <script>
     let currentCssVersion = 0;
     const activeMessageIds = new Set();
+    let debugCount = 0;
 
     async function poll() {
       try {
         const res = await fetch('/twitch/chat');
         if (res.ok) {
           const data = await res.json();
+          if (debugCount < 3) {
+            console.log("Twitch Chat Overlay Debug:", data);
+            debugCount++;
+          }
           update(data.messages, data.settings);
         }
 
@@ -142,7 +147,6 @@
 
       const container = document.getElementById('chat-container');
       
-      // Update global CSS variables from settings
       if (settings?.chat_background_blur !== undefined) {
         document.documentElement.style.setProperty('--chat-blur', `${settings.chat_background_blur}px`);
       }
@@ -168,12 +172,8 @@
       div.id = msg.id;
       
       let classes = ['chat-message', 'panoptic-overlay-card'];
-      
-      // Add Animation Class
       const anim = (settings?.chat_animation || 'Slide').toLowerCase();
       classes.push(`anim-${anim}`);
-
-      // Add Frame Class
       const frame = (settings?.chat_frame_style || 'None').toLowerCase();
       if (frame !== 'none') classes.push(`frame-${frame}`);
 
@@ -191,10 +191,10 @@
         ? `<span class="chat-pronouns">[${msg.pronouns}]</span>`
         : '';
       
-      const badgesHtml = (showBadges && msg.badges)
+      const badgesHtml = (showBadges && msg.badges && Array.isArray(msg.badges))
         ? `<span class="chat-badges-wrap">${msg.badges.map(b => {
             if (b.image_url) {
-                return `<img class="chat-badge" src="${b.image_url}" title="${b.set_id}">`;
+                return `<img class="chat-badge" src="${b.image_url}" title="${b.set_id}" onerror="this.outerHTML='<span class=\\'chat-badge-text badge-${b.set_id}\\'>${b.set_id[0].toUpperCase()}</span>'">`;
             }
             return `<span class="chat-badge-text badge-${b.set_id}">${b.set_id[0].toUpperCase()}</span>`;
           }).join('')}</span>`
