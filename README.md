@@ -32,6 +32,9 @@ Full support for real-time Twitch events via EventSub WebSocket:
 - **Stream Alerts:** High-fidelity notifications for **Follows**, **Subscriptions**, **Gift Subs**, **Raids**, and **Cheers**.
 - **Alert Stacking:** Multiple alerts can stack vertically. When an old alert expires, the remaining ones "drop" into place with a professional bouncing animation.
 - **Lifecycle Management:** Customisable alert duration and a "Keep Last Alert" mode to ensure your stream always has a visual anchor.
+- **Live Chat Overlay:** Real-time chat with full badge and emote image resolution, pronoun display, and configurable frame/animation styles.
+
+> **Note:** After updating to v0.1.9, Twitch API credentials must be re-linked. The plugin state was restructured — re-authenticate via **Settings → Twitch** before use.
 
 ### 🎨 High-Fidelity Theming
 - **Live CSS Editor:** Side-by-side workspace with a real-time preview. Styles are injected instantly as you type.
@@ -110,6 +113,7 @@ Add a new Browser source in OBS and point it to:
 - **Now Playing:** `http://localhost:3000/overlay/now-playing`
 - **Hype Train:** `http://localhost:3000/overlay/twitch/hype-train`
 - **Alerts:** `http://localhost:3000/overlay/twitch/alerts`
+- **Chat:** `http://localhost:3000/overlay/twitch_chat`
 
 The overlays pull their CSS directly from your Panoptic configuration.
 
