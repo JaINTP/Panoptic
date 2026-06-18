@@ -392,25 +392,43 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
                                 loop {
                                     if let Ok((mut ws, _)) = connect_async("wss://eventsub.wss.twitch.tv/ws").await {
                                         info!("Twitch EventSub: WebSocket connected.");
-                                        while let Some(Ok(Message::Text(text))) = ws.next().await {
-                                            if let Ok(msg) = serde_json::from_str::<TwitchEventSubMessage>(&text) {
-                                                if let Some(meta) = msg.metadata {
-                                                    match meta.message_type.as_str() {
-                                                        "session_welcome" => {
-                                                            if let Some(s) = msg.payload.and_then(|p| p.session) {
-                                                                let _ = subscribe_all_events(&client_id, &access_token, &info.id, &s.id).await;
-                                                            }
-                                                        }
-                                                        "notification" => {
-                                                            if let (Some(payload), Some(sub_type)) = (msg.payload, meta.subscription_type) {
-                                                                if let Some(event) = payload.event {
-                                                                    handle_event(&app_handle_inner, &manager_inner, &sub_type, event).await;
+                                        while let Some(msg_result) = ws.next().await {
+                                            match msg_result {
+                                                Ok(Message::Text(text)) => {
+                                                    if let Ok(msg) = serde_json::from_str::<TwitchEventSubMessage>(&text) {
+                                                        if let Some(meta) = msg.metadata {
+                                                            match meta.message_type.as_str() {
+                                                                "session_welcome" => {
+                                                                    if let Some(s) = msg.payload.and_then(|p| p.session) {
+                                                                        let _ = subscribe_all_events(&client_id, &access_token, &info.id, &s.id).await;
+                                                                    }
+                                                                }
+                                                                "notification" => {
+                                                                    if let (Some(payload), Some(sub_type)) = (msg.payload, meta.subscription_type) {
+                                                                        if let Some(event) = payload.event {
+                                                                            handle_event(&app_handle_inner, &manager_inner, &sub_type, event).await;
+                                                                        }
+                                                                    }
+                                                                }
+                                                                "session_keepalive" => {
+                                                                    // Quietly ignore keepalives
+                                                                }
+                                                                _ => {
+                                                                    info!("Twitch EventSub: Received message type: {}", meta.message_type);
                                                                 }
                                                             }
                                                         }
-                                                        _ => {}
                                                     }
                                                 }
+                                                Ok(Message::Close(frame)) => {
+                                                    warn!("Twitch EventSub: WebSocket closed by server: {:?}", frame);
+                                                    break;
+                                                }
+                                                Err(e) => {
+                                                    error!("Twitch EventSub: WebSocket error: {}", e);
+                                                    break;
+                                                }
+                                                _ => {}
                                             }
                                         }
                                         warn!("Twitch EventSub: WebSocket disconnected, retrying in 5s...");
