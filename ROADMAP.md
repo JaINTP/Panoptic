@@ -4,10 +4,11 @@ This document outlines the planned evolution of the Panoptic toolkit. Our focus 
 
 ## 🔌 Planned Plugins
 
-### 💬 High-Performance Twitch Chat Overlay
-Native, CSS-driven chat source that leverages Panoptic's atomic versioning and real-time styling.
+### 💬 Twitch Chat Overlay — Thematic Filtering
+Extend the live chat overlay with cross-plugin visual reactivity.
 - **Status:** Planning
-- **Key Feature:** Thematic Filtering—chat messages can trigger visual effects across other overlays.
+- **Key Feature:** Thematic Filtering—chat messages trigger visual effects across other overlays (e.g. a keyword flashes the hype train, a sub triggers a global colour shift).
+- **Shipped in v0.1.9:** Core chat overlay with badge/emote image resolution, pronoun display, and configurable frame and animation styles.
 
 ### 🏆 Universal Stream Goals
 Dynamic progress bars for Followers, Subscribers, and Bits with advanced animation support.
