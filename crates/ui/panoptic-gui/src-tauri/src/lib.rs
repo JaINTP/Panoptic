@@ -294,7 +294,12 @@ pub fn run() {
             ),
         ))
         .register(Box::new(
-            crate::engine::plugins::twitch_notifications::TwitchAlertsPlugin::new(twitch_manager),
+            crate::engine::plugins::twitch_notifications::TwitchAlertsPlugin::new(
+                twitch_manager.clone(),
+            ),
+        ))
+        .register(Box::new(
+            crate::engine::plugins::twitch_notifications::TwitchChatPlugin::new(twitch_manager),
         ));
 
     let plugins = registry.plugins;

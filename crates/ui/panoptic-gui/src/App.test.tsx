@@ -7,8 +7,8 @@ describe('Panoptic React GUI Tests', () => {
   test('renders the main dashboard with default Live Overlay view', async () => {
     render(<App />);
 
-    // Sidebar Title
-    expect(screen.getByText('PANOPTIC v0.1.6')).toBeInTheDocument();
+    // Sidebar Title (Check for prefix since version is dynamic/loading)
+    expect(screen.getByText(/PANOPTIC v/i)).toBeInTheDocument();
 
     // Default view content (Live Overlay Preview)
     expect(screen.getByText('Live Overlay Preview')).toBeInTheDocument();

@@ -8,6 +8,7 @@ import { CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { OverlayPreview, PlaybackState } from '../components/OverlayPreview';
 import { HypeTrainPreview, HypeTrainState } from '../components/HypeTrainPreview';
 import { TwitchAlertPreview, AlertState } from '../components/TwitchAlertPreview';
+import { TwitchChatPreview, ChatState, ChatMessageData } from '../components/TwitchChatPreview';
 import { SettingsField, PluginDef } from '../components/SettingsField';
 import { TwitchAlertPlaceholderGrid } from '../components/TwitchAlertPlaceholderGrid';
 
@@ -148,6 +149,10 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
     active_alerts: [],
   });
 
+  const [chatState, setChatState] = useState<ChatState>({
+    messages: [],
+  });
+
   const focusedInputRef = useRef<{ pluginId: string, key: string } | null>(null);
 
   useEffect(() => {
@@ -160,11 +165,19 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
     const unlistenAlert = listen<AlertState>('twitch_alert', (event) => {
       setAlertState(event.payload);
     });
+    const unlistenChat = listen<ChatMessageData>('twitch_chat_message', (event) => {
+      setChatState(prev => {
+        const newMsgs = [...prev.messages, event.payload];
+        if (newMsgs.length > 50) newMsgs.shift();
+        return { messages: newMsgs };
+      });
+    });
 
     return () => {
       unlistenHype.then(f => f());
       unlistenHypeClear.then(f => f());
       unlistenAlert.then(f => f());
+      unlistenChat.then(f => f());
     };
   }, []);
 
@@ -299,6 +312,15 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
             <TwitchAlertPreview
               state={alertState}
               settings={pluginSettings['twitch_alerts'] || {}}
+            />
+          </div>
+        );
+      case 'twitch_chat':
+        return (
+          <div style={{ transform: 'scale(0.75)', transformOrigin: 'center', width: '400px' }}>
+            <TwitchChatPreview
+              state={chatState}
+              settings={pluginSettings['twitch_chat'] || {}}
             />
           </div>
         );
