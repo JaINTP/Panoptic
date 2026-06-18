@@ -154,34 +154,51 @@ impl TwitchEventManager {
 
     pub async fn init_pronouns(&self) {
         let client = reqwest::Client::new();
-        if let Ok(res) = client.get("https://pronouns.alejo.io/api/pronouns").send().await {
-            if let Ok(map) = res.json::<HashMap<String, String>>().await {
-                let mut p_map = self.pronoun_map.lock().unwrap();
-                *p_map = map;
-                info!("Twitch Chat: Initialized pronouns map ({} entries)", p_map.len());
+        match client.get("https://pronouns.alejo.io/api/pronouns").send().await {
+            Ok(res) => {
+                if let Ok(map) = res.json::<HashMap<String, String>>().await {
+                    let mut p_map = self.pronoun_map.lock().unwrap();
+                    *p_map = map;
+                    info!("Twitch Chat: Initialized pronouns map ({} entries)", p_map.len());
+                }
             }
+            Err(e) => error!("Twitch Chat: Failed to fetch pronouns map: {}", e),
         }
     }
 
     pub async fn get_user_pronouns(&self, login: &str) -> Option<String> {
         {
             let cache = self.user_pronoun_cache.lock().unwrap();
-            if let Some(p) = cache.get(login) { return Some(p.clone()); }
+            if let Some(p) = cache.get(login) {
+                return Some(p.clone());
+            }
+        }
+
+        // If map is empty, try to init it once
+        {
+            let is_empty = self.pronoun_map.lock().unwrap().is_empty();
+            if is_empty {
+                self.init_pronouns().await;
+            }
         }
 
         let client = reqwest::Client::new();
         let url = format!("https://pronouns.alejo.io/api/users/{}", login);
-        if let Ok(res) = client.get(&url).send().await {
-            if let Ok(user_data) = res.json::<serde_json::Value>().await {
-                if let Some(p_id) = user_data["pronoun_id"].as_str() {
-                    let p_map = self.pronoun_map.lock().unwrap();
-                    if let Some(p_str) = p_map.get(p_id) {
-                        let mut cache = self.user_pronoun_cache.lock().unwrap();
-                        cache.insert(login.to_string(), p_str.clone());
-                        return Some(p_str.clone());
+        match client.get(&url).send().await {
+            Ok(res) => {
+                if let Ok(user_data) = res.json::<serde_json::Value>().await {
+                    if let Some(p_id) = user_data["pronoun_id"].as_str() {
+                        let p_map = self.pronoun_map.lock().unwrap();
+                        if let Some(p_str) = p_map.get(p_id) {
+                            let mut cache = self.user_pronoun_cache.lock().unwrap();
+                            cache.insert(login.to_string(), p_str.clone());
+                            info!("Twitch Chat: Resolved pronouns for {}: {}", login, p_str);
+                            return Some(p_str.clone());
+                        }
                     }
                 }
             }
+            Err(e) => warn!("Twitch Chat: Failed to fetch user pronouns for {}: {}", login, e),
         }
         None
     }

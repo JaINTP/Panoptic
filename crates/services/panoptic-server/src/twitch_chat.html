@@ -7,7 +7,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <link id="overlay-style" rel="stylesheet" href="/overlay/twitch_chat/style.css">
   <style>
-    body { background: transparent; overflow: hidden; margin: 0; padding: 0; }
+    body { 
+      background: transparent; 
+      overflow: hidden; 
+      margin: 0; 
+      padding: 0;
+      color: #ffffff;
+      font-family: 'Rajdhani', sans-serif;
+    }
     #chat-container {
       position: fixed;
       bottom: 20px;
@@ -17,6 +24,7 @@
       flex-direction: var(--chat-stack-direction, column);
       gap: var(--chat-message-gap, 8px);
       pointer-events: none;
+      color: inherit;
     }
 
     .chat-message {
