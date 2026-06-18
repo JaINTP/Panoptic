@@ -1,8 +1,8 @@
 /* ════════════════════════════════════════════════════════════════
    SALEM'S CAULDRON — Complete Master Theme
    ════════════════════════════════════════════════════════════════
-   USAGE: Paste this entire file into ANY or ALL Panoptic CSS 
-   editors (Now Playing, Hype Train, Alerts).
+   USAGE: Paste this entire file into ANY or ALL Panoptic CSS
+   editors (Now Playing, Hype Train, Alerts, Pomodoro Timer).
    ════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap');
@@ -314,4 +314,100 @@ body { -webkit-font-smoothing: antialiased; }
 @keyframes cornerTwinkle {
   0%, 100% { opacity: 0.4; transform: scale(1); }
   50%       { opacity: 0.9; transform: scale(1.3); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SALEM'S CAULDRON -- Pomodoro Timer
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --pomodoro-card-bg:           rgba(var(--color-bg-rgb), var(--color-bg-opacity));
+  --pomodoro-card-border-width: 1px;
+  --pomodoro-card-border-color: rgba(var(--color-border-rgb), 0.55);
+  --pomodoro-card-radius:       10px;
+  --pomodoro-card-blur:         12px;
+  --pomodoro-card-shadow:
+    0 0 0 1px rgba(var(--color-primary-rgb), 0.12),
+    0 0 30px rgba(var(--color-primary-rgb), 0.18),
+    0 8px 32px rgba(0,0,0,0.7);
+
+  --pomodoro-phase-font:        'Cinzel Decorative', serif;
+  --pomodoro-phase-size:        10px;
+  --pomodoro-time-font:         'Cinzel', serif;
+  --pomodoro-status-font:       'Cinzel', serif;
+
+  --pomodoro-time-color:        var(--color-text);
+  --pomodoro-ring-track-color:  rgba(var(--color-primary-rgb), 0.15);
+  --pomodoro-status-running-color: var(--color-progress);
+  --pomodoro-dot-empty-color:   rgba(var(--color-primary-rgb), 0.15);
+  --pomodoro-dot-border-color:  rgba(var(--color-border-rgb), 0.5);
+
+  /* Work phase - primary purple */
+  --pomodoro-work-phase-color:  var(--color-secondary);
+  --pomodoro-work-ring-color:   var(--color-primary);
+  --pomodoro-work-dot-color:    var(--color-primary);
+
+  /* Short break - cauldron green */
+  --pomodoro-short-break-phase-color: var(--color-progress);
+  --pomodoro-short-break-ring-color:  var(--color-progress);
+  --pomodoro-short-break-dot-color:   var(--color-progress);
+
+  /* Long break - gold */
+  --pomodoro-long-break-phase-color: var(--color-secondary);
+  --pomodoro-long-break-ring-color:  var(--color-secondary);
+  --pomodoro-long-break-dot-color:   var(--color-secondary);
+}
+
+/* Breathing glow matches the rest of the theme */
+.pomodoro-card {
+  animation: cardBreathe 6s ease-in-out infinite;
+  position: relative;
+}
+
+/* Gold shimmer edge at the top, matching .panoptic-overlay-card */
+.pomodoro-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(var(--color-secondary-rgb), 0.6) 40%,
+    rgba(var(--color-secondary-rgb), 0.6) 60%,
+    transparent);
+  z-index: 2;
+}
+
+/* Phase label in gold, italic */
+.pomodoro-phase {
+  color: var(--color-secondary);
+  font-style: normal;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(212, 168, 67, 0.4);
+}
+
+/* Countdown glow */
+.pomodoro-time {
+  text-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.5);
+}
+
+/* Ring glow per phase */
+.pomodoro-card[data-phase="work"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 5px var(--color-primary));
+}
+.pomodoro-card[data-phase="short_break"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 5px var(--color-progress));
+}
+.pomodoro-card[data-phase="long_break"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 5px var(--color-secondary));
+}
+
+/* Shimmer sweep on ring fill using a keyframe overlay trick */
+.pomodoro-ring-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(transparent 50%, rgba(255,255,255,0.06) 75%, transparent 100%);
+  animation: shimmer 3s linear infinite;
+  pointer-events: none;
 }

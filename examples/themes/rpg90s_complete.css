@@ -1,8 +1,8 @@
 /* ════════════════════════════════════════════════════════════════
    1990s RPG — Complete Master Theme
    ════════════════════════════════════════════════════════════════
-   USAGE: Paste this entire file into ANY or ALL Panoptic CSS 
-   editors (Now Playing, Hype Train, Alerts).
+   USAGE: Paste this entire file into ANY or ALL Panoptic CSS
+   editors (Now Playing, Hype Train, Alerts, Pomodoro Timer).
    ════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -204,4 +204,69 @@ body { font-family: 'Press Start 2P', cursive !important; text-transform: upperc
 
 .chat-pronouns {
   color: var(--rpg-gold);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   1990s RPG -- Pomodoro Timer
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --pomodoro-card-bg:           var(--rpg-blue);
+  --pomodoro-card-border-width: 4px;
+  --pomodoro-card-border-color: var(--rpg-white);
+  --pomodoro-card-radius:       0px;
+  --pomodoro-card-blur:         0px;
+  --pomodoro-card-shadow:       inset 0 0 0 2px #000, 6px 6px 0 rgba(0,0,0,0.5);
+  --pomodoro-card-gap:          10px;
+
+  --pomodoro-phase-font:        'Press Start 2P', monospace;
+  --pomodoro-phase-size:        7px;
+  --pomodoro-time-font:         'Press Start 2P', monospace;
+  --pomodoro-time-size:         18px;
+  --pomodoro-status-font:       'Press Start 2P', monospace;
+  --pomodoro-status-size:       6px;
+
+  --pomodoro-time-color:        var(--rpg-white);
+  --pomodoro-ring-track-color:  rgba(255, 255, 255, 0.15);
+  --pomodoro-ring-width:        8;
+  --pomodoro-status-running-color: var(--rpg-gold);
+  --pomodoro-dot-size:          10px;
+  --pomodoro-dot-empty-color:   rgba(255, 255, 255, 0.15);
+  --pomodoro-dot-border-color:  var(--rpg-white);
+
+  /* Work phase - white (classic RPG HP bar) */
+  --pomodoro-work-phase-color:  var(--rpg-white);
+  --pomodoro-work-ring-color:   var(--rpg-white);
+  --pomodoro-work-dot-color:    var(--rpg-white);
+
+  /* Short break - gold (MP bar) */
+  --pomodoro-short-break-phase-color: var(--rpg-gold);
+  --pomodoro-short-break-ring-color:  var(--rpg-gold);
+  --pomodoro-short-break-dot-color:   var(--rpg-gold);
+
+  /* Long break - gold as well */
+  --pomodoro-long-break-phase-color: var(--rpg-gold);
+  --pomodoro-long-break-ring-color:  var(--rpg-gold);
+  --pomodoro-long-break-dot-color:   var(--rpg-gold);
+}
+
+/* No transitions for that instant pixel feel */
+.pomodoro-card,
+.pomodoro-ring-fill,
+.pomodoro-dot {
+  transition: none !important;
+}
+
+/* Pixel sprite bounce on the filled dots */
+.pomodoro-dot.filled {
+  animation: spriteBounce 0.6s steps(2) infinite;
+}
+
+/* Status text blink like an old-school cursor */
+.pomodoro-status.running {
+  animation: rpgBlink 1s steps(1) infinite;
+}
+
+@keyframes rpgBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }

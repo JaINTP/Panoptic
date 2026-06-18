@@ -1,8 +1,8 @@
 /* ════════════════════════════════════════════════════════════════
    ELDRITCH HORROR — Complete Master Theme
    ════════════════════════════════════════════════════════════════
-   USAGE: Paste this entire file into ANY or ALL Panoptic CSS 
-   editors (Now Playing, Hype Train, Alerts).
+   USAGE: Paste this entire file into ANY or ALL Panoptic CSS
+   editors (Now Playing, Hype Train, Alerts, Pomodoro Timer).
    ════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=MedievalSharp&display=swap');
@@ -214,4 +214,69 @@ body { font-style: italic; }
 
 .chat-pronouns {
   color: var(--void-purple);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ELDRITCH HORROR -- Pomodoro Timer
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --pomodoro-card-bg:           rgba(10, 10, 16, 0.95);
+  --pomodoro-card-border-width: 2px;
+  --pomodoro-card-border-color: var(--void-purple);
+  --pomodoro-card-radius:       12px;
+  --pomodoro-card-blur:         16px;
+  --pomodoro-card-shadow:       0 0 40px rgba(58, 0, 85, 0.35);
+
+  --pomodoro-phase-font:        'MedievalSharp', cursive;
+  --pomodoro-time-font:         'MedievalSharp', cursive;
+  --pomodoro-status-font:       'Crimson Text', serif;
+
+  --pomodoro-time-color:        var(--void-text);
+  --pomodoro-ring-track-color:  rgba(58, 0, 85, 0.25);
+  --pomodoro-status-running-color: var(--void-green);
+  --pomodoro-dot-empty-color:   rgba(58, 0, 85, 0.2);
+  --pomodoro-dot-border-color:  rgba(58, 0, 85, 0.5);
+
+  /* Work phase - void purple */
+  --pomodoro-work-phase-color:  #9b4dca;
+  --pomodoro-work-ring-color:   var(--void-purple);
+  --pomodoro-work-dot-color:    var(--void-purple);
+
+  /* Short break - void green */
+  --pomodoro-short-break-phase-color: var(--void-green);
+  --pomodoro-short-break-ring-color:  var(--void-green);
+  --pomodoro-short-break-dot-color:   var(--void-green);
+
+  /* Long break - sickly teal */
+  --pomodoro-long-break-phase-color: #006655;
+  --pomodoro-long-break-ring-color:  #006655;
+  --pomodoro-long-break-dot-color:   #006655;
+}
+
+/* The card breathes like the other eldritch components */
+.pomodoro-card {
+  animation: voidBreathe 8s ease-in-out infinite;
+}
+
+/* Phase label warps subtly */
+.pomodoro-phase {
+  font-style: italic;
+  letter-spacing: 0.15em;
+}
+
+/* Summoning glow on the ring fill */
+.pomodoro-card[data-phase="work"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 6px var(--void-purple));
+}
+.pomodoro-card[data-phase="short_break"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 6px var(--void-green));
+}
+.pomodoro-card[data-phase="long_break"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 6px #006655);
+}
+
+/* Countdown text has a slight text-shadow warp */
+.pomodoro-time {
+  text-shadow: 1px 1px 0 var(--void-purple), -1px -1px 0 var(--void-green);
+  letter-spacing: -0.02em;
 }

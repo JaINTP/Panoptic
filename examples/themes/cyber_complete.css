@@ -1,8 +1,8 @@
 /* ════════════════════════════════════════════════════════════════
    CYBER-NEON OVERLOAD — Complete Master Theme
    ════════════════════════════════════════════════════════════════
-   USAGE: Paste this entire file into ANY or ALL Panoptic CSS 
-   editors (Now Playing, Hype Train, Alerts).
+   USAGE: Paste this entire file into ANY or ALL Panoptic CSS
+   editors (Now Playing, Hype Train, Alerts, Pomodoro Timer).
    ════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap');
@@ -214,4 +214,84 @@ body { text-transform: uppercase; letter-spacing: 1px; }
   background-size: 100% 4px;
   pointer-events: none;
   z-index: 10;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CYBER-NEON -- Pomodoro Timer
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --pomodoro-card-bg:           var(--cyber-bg);
+  --pomodoro-card-border-width: 2px;
+  --pomodoro-card-border-color: var(--cyber-cyan);
+  --pomodoro-card-radius:       0px;
+  --pomodoro-card-blur:         0px;
+  --pomodoro-card-shadow:       0 0 20px rgba(0, 242, 255, 0.25), 6px 6px 0 rgba(0,0,0,0.5);
+
+  --pomodoro-phase-font:        'Orbitron', sans-serif;
+  --pomodoro-time-font:         'Orbitron', sans-serif;
+  --pomodoro-status-font:       'Rajdhani', sans-serif;
+
+  --pomodoro-time-color:        #ffffff;
+  --pomodoro-ring-track-color:  rgba(0, 242, 255, 0.12);
+  --pomodoro-status-running-color: #00f2ff;
+
+  /* Work phase - cyan */
+  --pomodoro-work-phase-color:  var(--cyber-cyan);
+  --pomodoro-work-ring-color:   var(--cyber-cyan);
+  --pomodoro-work-dot-color:    var(--cyber-cyan);
+
+  /* Short break - pink */
+  --pomodoro-short-break-phase-color: var(--cyber-pink);
+  --pomodoro-short-break-ring-color:  var(--cyber-pink);
+  --pomodoro-short-break-dot-color:   var(--cyber-pink);
+
+  /* Long break - lime */
+  --pomodoro-long-break-phase-color: #00ff88;
+  --pomodoro-long-break-ring-color:  #00ff88;
+  --pomodoro-long-break-dot-color:   #00ff88;
+}
+
+/* Sharp cyber clip on the card */
+.pomodoro-card {
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 92% 100%, 0 100%);
+  position: relative;
+}
+
+/* Scanlines carry over to the timer */
+.pomodoro-card::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Glitch flicker on the phase label */
+.pomodoro-phase {
+  animation: cyberPhaseFlicker 6s step-end infinite;
+}
+
+@keyframes cyberPhaseFlicker {
+  0%, 90%, 100% { opacity: 1; transform: none; }
+  91%            { opacity: 0.4; transform: skewX(5deg); }
+  93%            { opacity: 1; transform: none; }
+  95%            { opacity: 0.6; transform: skewX(-3deg); }
+}
+
+/* Neon glow on the countdown */
+.pomodoro-time {
+  text-shadow: 0 0 8px currentColor, 0 0 20px currentColor;
+}
+
+/* Phase-tinted ring glow */
+.pomodoro-card[data-phase="work"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 4px var(--cyber-cyan));
+}
+.pomodoro-card[data-phase="short_break"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 4px var(--cyber-pink));
+}
+.pomodoro-card[data-phase="long_break"] .pomodoro-ring-fill {
+  filter: drop-shadow(0 0 4px #00ff88);
 }
