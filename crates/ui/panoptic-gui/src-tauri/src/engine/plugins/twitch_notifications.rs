@@ -39,11 +39,30 @@ pub struct TwitchContribution {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "data")]
 pub enum TwitchAlert {
-    Follow { user_name: String },
-    Subscription { user_name: String, tier: String, is_gift: bool, cumulative_months: u32 },
-    GiftSubscription { user_name: String, total: u32, tier: String, is_anonymous: bool },
-    Raid { from_broadcaster_name: String, viewers: u32 },
-    Cheer { user_name: String, bits: u32, message: String },
+    Follow {
+        user_name: String,
+    },
+    Subscription {
+        user_name: String,
+        tier: String,
+        is_gift: bool,
+        cumulative_months: u32,
+    },
+    GiftSubscription {
+        user_name: String,
+        total: u32,
+        tier: String,
+        is_anonymous: bool,
+    },
+    Raid {
+        from_broadcaster_name: String,
+        viewers: u32,
+    },
+    Cheer {
+        user_name: String,
+        bits: u32,
+        message: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -119,6 +138,12 @@ struct EventSubSession {
     id: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct PronounEntry {
+    name: String,
+    display: String,
+}
+
 /* ── Shared Event Manager ─────────────────────────────────────── */
 
 pub struct TwitchEventManager {
@@ -144,8 +169,12 @@ impl TwitchEventManager {
                 started_at: "".to_string(),
                 expires_at: "".to_string(),
             })),
-            alert_state: Arc::new(Mutex::new(AlertState { active_alerts: Vec::new() })),
-            chat_state: Arc::new(Mutex::new(ChatState { messages: Vec::new() })),
+            alert_state: Arc::new(Mutex::new(AlertState {
+                active_alerts: Vec::new(),
+            })),
+            chat_state: Arc::new(Mutex::new(ChatState {
+                messages: Vec::new(),
+            })),
             broadcaster_info: Arc::new(Mutex::new(TwitchBroadcasterInfo::default())),
             pronoun_map: Arc::new(Mutex::new(HashMap::new())),
             user_pronoun_cache: Arc::new(Mutex::new(HashMap::new())),
@@ -154,12 +183,24 @@ impl TwitchEventManager {
 
     pub async fn init_pronouns(&self) {
         let client = reqwest::Client::new();
-        match client.get("https://api.pronouns.alejo.io/api/pronouns").send().await {
+        match client
+            .get("https://api.pronouns.alejo.io/api/pronouns")
+            .send()
+            .await
+        {
             Ok(res) => {
-                if let Ok(map) = res.json::<HashMap<String, String>>().await {
+                if let Ok(entries) = res.json::<Vec<PronounEntry>>().await {
+                    let map: HashMap<String, String> =
+                        entries.into_iter().map(|e| (e.name, e.display)).collect();
+
                     let mut p_map = self.pronoun_map.lock().unwrap();
                     *p_map = map;
-                    info!("Twitch Chat: Initialized pronouns map ({} entries)", p_map.len());
+                    info!(
+                        "Twitch Chat: Initialized pronouns map ({} entries)",
+                        p_map.len()
+                    );
+                } else {
+                    error!("Twitch Chat: Failed to parse global pronouns map JSON");
                 }
             }
             Err(e) => error!("Twitch Chat: Failed to fetch pronouns map: {}", e),
@@ -169,12 +210,16 @@ impl TwitchEventManager {
     pub async fn get_user_pronouns(&self, login: &str) -> Option<String> {
         {
             let cache = self.user_pronoun_cache.lock().unwrap();
-            if let Some(p) = cache.get(login) { return Some(p.clone()); }
+            if let Some(p) = cache.get(login) {
+                return Some(p.clone());
+            }
         }
 
         {
             let is_empty = self.pronoun_map.lock().unwrap().is_empty();
-            if is_empty { self.init_pronouns().await; }
+            if is_empty {
+                self.init_pronouns().await;
+            }
         }
 
         let client = reqwest::Client::new();
@@ -182,7 +227,6 @@ impl TwitchEventManager {
         match client.get(&url).send().await {
             Ok(res) => {
                 if let Ok(user_data) = res.json::<serde_json::Value>().await {
-                    // Alejo API returns an ARRAY of objects, e.g. [{ "pronoun_id": "..." }]
                     if let Some(first) = user_data.as_array().and_then(|a| a.get(0)) {
                         if let Some(p_id) = first["pronoun_id"].as_str() {
                             let p_map = self.pronoun_map.lock().unwrap();
@@ -196,27 +240,55 @@ impl TwitchEventManager {
                     }
                 }
             }
-            Err(e) => warn!("Twitch Chat: Failed to fetch user pronouns for {}: {}", login, e),
+            Err(e) => warn!(
+                "Twitch Chat: Failed to fetch user pronouns for {}: {}",
+                login, e
+            ),
         }
         None
     }
 }
 
-impl Default for TwitchEventManager { fn default() -> Self { Self::new() } }
+impl Default for TwitchEventManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /* ── Plugins ─────────────────────────────────────────────────── */
 
-pub struct TwitchHypeTrainPlugin { manager: Arc<TwitchEventManager> }
-pub struct TwitchAlertsPlugin { manager: Arc<TwitchEventManager> }
-pub struct TwitchChatPlugin { manager: Arc<TwitchEventManager> }
+pub struct TwitchHypeTrainPlugin {
+    manager: Arc<TwitchEventManager>,
+}
+pub struct TwitchAlertsPlugin {
+    manager: Arc<TwitchEventManager>,
+}
+pub struct TwitchChatPlugin {
+    manager: Arc<TwitchEventManager>,
+}
 
-impl TwitchHypeTrainPlugin { pub fn new(manager: Arc<TwitchEventManager>) -> Self { Self { manager } } }
-impl TwitchAlertsPlugin { pub fn new(manager: Arc<TwitchEventManager>) -> Self { Self { manager } } }
-impl TwitchChatPlugin { pub fn new(manager: Arc<TwitchEventManager>) -> Self { Self { manager } } }
+impl TwitchHypeTrainPlugin {
+    pub fn new(manager: Arc<TwitchEventManager>) -> Self {
+        Self { manager }
+    }
+}
+impl TwitchAlertsPlugin {
+    pub fn new(manager: Arc<TwitchEventManager>) -> Self {
+        Self { manager }
+    }
+}
+impl TwitchChatPlugin {
+    pub fn new(manager: Arc<TwitchEventManager>) -> Self {
+        Self { manager }
+    }
+}
 
 /* ── Common logic ───────────────────────────────────────────── */
 
-async fn fetch_broadcaster_info(client_id: &str, access_token: &str) -> Result<TwitchBroadcasterInfo, String> {
+async fn fetch_broadcaster_info(
+    client_id: &str,
+    access_token: &str,
+) -> Result<TwitchBroadcasterInfo, String> {
     let client = reqwest::Client::new();
     let res = client
         .get("https://api.twitch.tv/helix/users")
@@ -226,30 +298,55 @@ async fn fetch_broadcaster_info(client_id: &str, access_token: &str) -> Result<T
         .await
         .map_err(|e| format!("Helix API request failed: {}", e))?;
 
-    if !res.status().is_success() { return Err(format!("Helix API returned error: {}", res.status())); }
+    if !res.status().is_success() {
+        return Err(format!("Helix API returned error: {}", res.status()));
+    }
 
-    let data: serde_json::Value = res.json().await.map_err(|e| format!("Failed to parse Helix response: {}", e))?;
+    let data: serde_json::Value = res
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse Helix response: {}", e))?;
     let user = &data["data"][0];
     Ok(TwitchBroadcasterInfo {
         id: user["id"].as_str().unwrap_or_default().to_string(),
         login: user["login"].as_str().unwrap_or_default().to_string(),
-        display_name: user["display_name"].as_str().unwrap_or_default().to_string(),
+        display_name: user["display_name"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
     })
 }
 
-async fn subscribe_all_events(client_id: &str, access_token: &str, broadcaster_id: &str, session_id: &str) -> Result<(), String> {
+async fn subscribe_all_events(
+    client_id: &str,
+    access_token: &str,
+    broadcaster_id: &str,
+    session_id: &str,
+) -> Result<(), String> {
     let client = reqwest::Client::new();
     let subs = vec![
-        ("channel.hype_train.begin", "2"), ("channel.hype_train.progress", "2"), ("channel.hype_train.end", "2"),
-        ("channel.follow", "2"), ("channel.subscribe", "1"), ("channel.subscription.gift", "1"),
-        ("channel.raid", "1"), ("channel.cheer", "1"), ("channel.chat.message", "1"),
+        ("channel.hype_train.begin", "2"),
+        ("channel.hype_train.progress", "2"),
+        ("channel.hype_train.end", "2"),
+        ("channel.follow", "2"),
+        ("channel.subscribe", "1"),
+        ("channel.subscription.gift", "1"),
+        ("channel.raid", "1"),
+        ("channel.cheer", "1"),
+        ("channel.chat.message", "1"),
     ];
 
     for (sub_type, version) in subs {
         let mut condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id });
-        if sub_type == "channel.follow" { condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "moderator_user_id": broadcaster_id }); }
-        if sub_type == "channel.chat.message" { condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "user_id": broadcaster_id }); }
-        if sub_type == "channel.raid" { condition = serde_json::json!({ "to_broadcaster_user_id": broadcaster_id }); }
+        if sub_type == "channel.follow" {
+            condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "moderator_user_id": broadcaster_id });
+        }
+        if sub_type == "channel.chat.message" {
+            condition = serde_json::json!({ "broadcaster_user_id": broadcaster_id, "user_id": broadcaster_id });
+        }
+        if sub_type == "channel.raid" {
+            condition = serde_json::json!({ "to_broadcaster_user_id": broadcaster_id });
+        }
 
         let _ = client
             .post("https://api.twitch.tv/helix/eventsub/subscriptions")
@@ -259,12 +356,18 @@ async fn subscribe_all_events(client_id: &str, access_token: &str, broadcaster_i
                 "type": sub_type, "version": version, "condition": condition,
                 "transport": { "method": "websocket", "session_id": session_id }
             }))
-            .send().await;
+            .send()
+            .await;
     }
     Ok(())
 }
 
-async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_type: &str, event: serde_json::Value) {
+async fn handle_event(
+    app: &tauri::AppHandle,
+    manager: &TwitchEventManager,
+    sub_type: &str,
+    event: serde_json::Value,
+) {
     use tauri::Emitter;
     match sub_type {
         "channel.hype_train.begin" | "channel.hype_train.progress" => {
@@ -275,13 +378,16 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
             state.progress = event["progress"].as_u64().unwrap_or(0) as u32;
             state.goal = event["goal"].as_u64().unwrap_or(100) as u32;
             if let Some(top) = event["top_contributions"].as_array() {
-                state.top_contributions = top.iter().map(|c| TwitchContribution {
-                    user_id: c["user_id"].as_str().unwrap_or_default().to_string(),
-                    user_login: c["user_login"].as_str().unwrap_or_default().to_string(),
-                    user_name: c["user_name"].as_str().unwrap_or_default().to_string(),
-                    type_field: c["type"].as_str().unwrap_or_default().to_string(),
-                    total: c["total"].as_u64().unwrap_or(0) as u32,
-                }).collect();
+                state.top_contributions = top
+                    .iter()
+                    .map(|c| TwitchContribution {
+                        user_id: c["user_id"].as_str().unwrap_or_default().to_string(),
+                        user_login: c["user_login"].as_str().unwrap_or_default().to_string(),
+                        user_name: c["user_name"].as_str().unwrap_or_default().to_string(),
+                        type_field: c["type"].as_str().unwrap_or_default().to_string(),
+                        total: c["total"].as_u64().unwrap_or(0) as u32,
+                    })
+                    .collect();
             }
             let _ = app.emit("twitch_hype_train", state.clone());
         }
@@ -291,39 +397,70 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
             let _ = app.emit("twitch_hype_train", state.clone());
         }
         "channel.follow" => {
-            update_alert(app, &manager.alert_state, TwitchAlert::Follow { user_name: event["user_name"].as_str().unwrap_or("Someone").to_string() });
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::Follow {
+                    user_name: event["user_name"].as_str().unwrap_or("Someone").to_string(),
+                },
+            );
         }
         "channel.subscribe" => {
-            update_alert(app, &manager.alert_state, TwitchAlert::Subscription {
-                user_name: event["user_name"].as_str().unwrap_or("Someone").to_string(),
-                tier: event["tier"].as_str().unwrap_or("1000").to_string(),
-                is_gift: event["is_gift"].as_bool().unwrap_or(false),
-                cumulative_months: event["cumulative_months"].as_u64().unwrap_or(1) as u32,
-            });
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::Subscription {
+                    user_name: event["user_name"].as_str().unwrap_or("Someone").to_string(),
+                    tier: event["tier"].as_str().unwrap_or("1000").to_string(),
+                    is_gift: event["is_gift"].as_bool().unwrap_or(false),
+                    cumulative_months: event["cumulative_months"].as_u64().unwrap_or(1) as u32,
+                },
+            );
         }
         "channel.subscription.gift" => {
-            update_alert(app, &manager.alert_state, TwitchAlert::GiftSubscription {
-                user_name: event["user_name"].as_str().unwrap_or("Anonymous").to_string(),
-                total: event["total"].as_u64().unwrap_or(1) as u32,
-                tier: event["tier"].as_str().unwrap_or("1000").to_string(),
-                is_anonymous: event["is_anonymous"].as_bool().unwrap_or(false),
-            });
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::GiftSubscription {
+                    user_name: event["user_name"]
+                        .as_str()
+                        .unwrap_or("Anonymous")
+                        .to_string(),
+                    total: event["total"].as_u64().unwrap_or(1) as u32,
+                    tier: event["tier"].as_str().unwrap_or("1000").to_string(),
+                    is_anonymous: event["is_anonymous"].as_bool().unwrap_or(false),
+                },
+            );
         }
         "channel.raid" => {
-            update_alert(app, &manager.alert_state, TwitchAlert::Raid {
-                from_broadcaster_name: event["from_broadcaster_user_name"].as_str().unwrap_or("Someone").to_string(),
-                viewers: event["viewers"].as_u64().unwrap_or(0) as u32,
-            });
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::Raid {
+                    from_broadcaster_name: event["from_broadcaster_user_name"]
+                        .as_str()
+                        .unwrap_or("Someone")
+                        .to_string(),
+                    viewers: event["viewers"].as_u64().unwrap_or(0) as u32,
+                },
+            );
         }
         "channel.cheer" => {
-            update_alert(app, &manager.alert_state, TwitchAlert::Cheer {
-                user_name: event["user_name"].as_str().unwrap_or("Anon").to_string(),
-                bits: event["bits"].as_u64().unwrap_or(0) as u32,
-                message: event["message"].as_str().unwrap_or_default().to_string(),
-            });
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::Cheer {
+                    user_name: event["user_name"].as_str().unwrap_or("Anon").to_string(),
+                    bits: event["bits"].as_u64().unwrap_or(0) as u32,
+                    message: event["message"].as_str().unwrap_or_default().to_string(),
+                },
+            );
         }
         "channel.chat.message" => {
-            let user_login = event["chatter_user_login"].as_str().unwrap_or_default().to_string();
+            let user_login = event["chatter_user_login"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string();
             let pronouns = manager.get_user_pronouns(&user_login).await;
             let mut badges = Vec::new();
             if let Some(arr) = event["badges"].as_array() {
@@ -343,16 +480,35 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
             let mut state = manager.chat_state.lock().unwrap();
             let msg = ChatMessageData {
                 id: event["message_id"].as_str().unwrap_or_default().to_string(),
-                user_id: event["chatter_user_id"].as_str().unwrap_or_default().to_string(),
+                user_id: event["chatter_user_id"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string(),
                 user_login,
-                user_name: event["chatter_user_name"].as_str().unwrap_or_default().to_string(),
-                message: event["message"]["text"].as_str().unwrap_or_default().to_string(),
+                user_name: event["chatter_user_name"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string(),
+                message: event["message"]["text"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string(),
                 color: event["color"].as_str().unwrap_or("#ffffff").to_string(),
-                pronouns, badges, is_mod, is_sub, is_vip, is_broadcaster,
-                timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
+                pronouns,
+                badges,
+                is_mod,
+                is_sub,
+                is_vip,
+                is_broadcaster,
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
             };
             state.messages.push(msg.clone());
-            if state.messages.len() > 100 { state.messages.remove(0); }
+            if state.messages.len() > 100 {
+                state.messages.remove(0);
+            }
             let _ = app.emit("twitch_chat_message", msg);
         }
         _ => {}
@@ -361,21 +517,38 @@ async fn handle_event(app: &tauri::AppHandle, manager: &TwitchEventManager, sub_
 
 fn update_alert(app: &tauri::AppHandle, state_lock: &Arc<Mutex<AlertState>>, alert: TwitchAlert) {
     use tauri::Emitter;
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
     let id = format!("alert_{}_{}", now, rand::random::<u16>());
     let mut state = state_lock.lock().unwrap();
-    state.active_alerts.push(QueuedAlert { id, alert, timestamp: now });
-    if state.active_alerts.len() > 10 { state.active_alerts.remove(0); }
+    state.active_alerts.push(QueuedAlert {
+        id,
+        alert,
+        timestamp: now,
+    });
+    if state.active_alerts.len() > 10 {
+        state.active_alerts.remove(0);
+    }
     let _ = app.emit("twitch_alert", state.clone());
 }
 
 /* ── Plugin Implementations ──────────────────────────────────── */
 
 impl PanopticPlugin for TwitchHypeTrainPlugin {
-    fn id(&self) -> &'static str { "twitch_hype_train" }
-    fn name(&self) -> &'static str { "Twitch Hype Train" }
+    fn id(&self) -> &'static str {
+        "twitch_hype_train"
+    }
+    fn name(&self) -> &'static str {
+        "Twitch Hype Train"
+    }
     fn setup(&self, app: &tauri::AppHandle) -> Result<(), String> {
-        let auth_rx = app.try_state::<tokio::sync::watch::Receiver<AuthState>>().ok_or("No auth state")?.inner().clone();
+        let auth_rx = app
+            .try_state::<tokio::sync::watch::Receiver<AuthState>>()
+            .ok_or("No auth state")?
+            .inner()
+            .clone();
         let app_handle = app.clone();
         let manager = self.manager.clone();
         tauri::async_runtime::spawn(async move {
@@ -384,15 +557,32 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
             manager.init_pronouns().await;
             while rx.changed().await.is_ok() {
                 let state = rx.borrow().clone();
-                if let AuthState::Authenticated { provider, access_token, .. } = state {
-                    if provider != "twitch" { continue; }
-                    if let Some(t) = current_task.take() { t.abort(); }
+                if let AuthState::Authenticated {
+                    provider,
+                    access_token,
+                    ..
+                } = state
+                {
+                    if provider != "twitch" {
+                        continue;
+                    }
+                    if let Some(t) = current_task.take() {
+                        t.abort();
+                    }
                     let app_handle_inner = app_handle.clone();
                     let manager_inner = manager.clone();
                     current_task = Some(tokio::spawn(async move {
                         let settings = AppSettings::load(&app_handle_inner);
-                        let client_id = settings.plugins.get("twitch").and_then(|v| v.get("client_id")).and_then(|v| v.as_str()).unwrap_or("").to_string();
-                        if client_id.is_empty() { return; }
+                        let client_id = settings
+                            .plugins
+                            .get("twitch")
+                            .and_then(|v| v.get("client_id"))
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        if client_id.is_empty() {
+                            return;
+                        }
                         match fetch_broadcaster_info(&client_id, &access_token).await {
                             Ok(info) => {
                                 info!("Twitch EventSub: Starting WebSocket loop for broadcaster: {} ({})", info.display_name, info.id);
@@ -435,44 +625,98 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
                             Err(e) => error!("Twitch EventSub: Failed to fetch broadcaster info: {}. WebSocket loop will not start.", e),
                         }
                     }));
-                } else if matches!(state, AuthState::Unauthenticated) { if let Some(t) = current_task.take() { t.abort(); } }
+                } else if matches!(state, AuthState::Unauthenticated) {
+                    if let Some(t) = current_task.take() {
+                        t.abort();
+                    }
+                }
             }
         });
         Ok(())
     }
     fn register_routes(&self, router: Router<AppState>) -> Router<AppState> {
         let hype_state = self.manager.hype_state.clone();
-        router.route("/twitch/hype-train", get(move |AxumState(app_state): AxumState<AppState>| {
-            let state = hype_state.lock().unwrap().clone();
-            let settings = if let Some(path) = app_state.settings_path {
-                let settings = std::fs::read_to_string(path).ok().and_then(|s| serde_json::from_str::<AppSettings>(&s).ok());
-                settings.and_then(|s| s.plugins.get("twitch_hype_train").cloned()).unwrap_or_else(|| serde_json::json!({}))
-            } else { serde_json::json!({}) };
-            async move { axum::Json(serde_json::json!({ "state": state, "settings": settings })) }
-        })).route("/overlay/twitch/hype-train", get(panoptic_server::handlers::twitch::get_twitch_hype_train_overlay))
+        router
+            .route(
+                "/twitch/hype-train",
+                get(move |AxumState(app_state): AxumState<AppState>| {
+                    let state = hype_state.lock().unwrap().clone();
+                    let settings = if let Some(path) = app_state.settings_path {
+                        let settings = std::fs::read_to_string(path)
+                            .ok()
+                            .and_then(|s| serde_json::from_str::<AppSettings>(&s).ok());
+                        settings
+                            .and_then(|s| s.plugins.get("twitch_hype_train").cloned())
+                            .unwrap_or_else(|| serde_json::json!({}))
+                    } else {
+                        serde_json::json!({})
+                    };
+                    async move {
+                        axum::Json(serde_json::json!({ "state": state, "settings": settings }))
+                    }
+                }),
+            )
+            .route(
+                "/overlay/twitch/hype-train",
+                get(panoptic_server::handlers::twitch::get_twitch_hype_train_overlay),
+            )
     }
     fn settings_definition(&self) -> Option<PluginSettingsDefinition> {
         Some(PluginSettingsDefinition {
             category: PluginCategory::Overlay,
             fields: vec![
-                SettingField { key: "inactive_title".into(), label: "Overlay Title".into(), description: None, field_type: SettingFieldType::Text, default_value: serde_json::json!("Hype Train") },
-                SettingField { key: "active_title".into(), label: "Active Title".into(), description: None, field_type: SettingFieldType::Text, default_value: serde_json::json!("Hype Train Active!") },
-                SettingField { key: "test_action".into(), label: "Test Overlay".into(), description: None, field_type: SettingFieldType::Action { button_label: "Test Hype Train".into(), action_name: "test_hype_train".into() }, default_value: serde_json::Value::Null },
+                SettingField {
+                    key: "inactive_title".into(),
+                    label: "Overlay Title".into(),
+                    description: None,
+                    field_type: SettingFieldType::Text,
+                    default_value: serde_json::json!("Hype Train"),
+                },
+                SettingField {
+                    key: "active_title".into(),
+                    label: "Active Title".into(),
+                    description: None,
+                    field_type: SettingFieldType::Text,
+                    default_value: serde_json::json!("Hype Train Active!"),
+                },
+                SettingField {
+                    key: "test_action".into(),
+                    label: "Test Overlay".into(),
+                    description: None,
+                    field_type: SettingFieldType::Action {
+                        button_label: "Test Hype Train".into(),
+                        action_name: "test_hype_train".into(),
+                    },
+                    default_value: serde_json::Value::Null,
+                },
             ],
         })
     }
-    fn handle_action(&self, action: &str, app: &tauri::AppHandle) -> Result<serde_json::Value, String> {
+    fn handle_action(
+        &self,
+        action: &str,
+        app: &tauri::AppHandle,
+    ) -> Result<serde_json::Value, String> {
         if action == "test_hype_train" {
-            let app_handle = app.clone(); let state_lock = self.manager.hype_state.clone();
-            tauri::async_runtime::spawn(async move { simulate_mock_hype_train(&app_handle, &state_lock).await; });
+            let app_handle = app.clone();
+            let state_lock = self.manager.hype_state.clone();
+            tauri::async_runtime::spawn(async move {
+                simulate_mock_hype_train(&app_handle, &state_lock).await;
+            });
             Ok(serde_json::json!({ "status": "initiated" }))
-        } else { Err("Unknown action".to_string()) }
+        } else {
+            Err("Unknown action".to_string())
+        }
     }
 }
 
 impl PanopticPlugin for TwitchAlertsPlugin {
-    fn id(&self) -> &'static str { "twitch_alerts" }
-    fn name(&self) -> &'static str { "Twitch Alerts" }
+    fn id(&self) -> &'static str {
+        "twitch_alerts"
+    }
+    fn name(&self) -> &'static str {
+        "Twitch Alerts"
+    }
     fn register_routes(&self, router: Router<AppState>) -> Router<AppState> {
         let alert_state = self.manager.alert_state.clone();
         router.route("/twitch/alerts", get(move |AxumState(app_state): AxumState<AppState>| {
@@ -488,83 +732,228 @@ impl PanopticPlugin for TwitchAlertsPlugin {
         Some(PluginSettingsDefinition {
             category: PluginCategory::Overlay,
             fields: vec![
-                SettingField { key: "follow_text".into(), label: "Follow Text".into(), description: None, field_type: SettingFieldType::Text, default_value: serde_json::json!("{user} just followed!") },
-                SettingField { key: "test_alerts".into(), label: "Test Simulation".into(), description: None, field_type: SettingFieldType::Action { button_label: "Simulate All Alerts".into(), action_name: "test_all".into() }, default_value: serde_json::Value::Null },
+                SettingField {
+                    key: "follow_text".into(),
+                    label: "Follow Text".into(),
+                    description: None,
+                    field_type: SettingFieldType::Text,
+                    default_value: serde_json::json!("{user} just followed!"),
+                },
+                SettingField {
+                    key: "test_alerts".into(),
+                    label: "Test Simulation".into(),
+                    description: None,
+                    field_type: SettingFieldType::Action {
+                        button_label: "Simulate All Alerts".into(),
+                        action_name: "test_all".into(),
+                    },
+                    default_value: serde_json::Value::Null,
+                },
             ],
         })
     }
-    fn handle_action(&self, action: &str, app: &tauri::AppHandle) -> Result<serde_json::Value, String> {
+    fn handle_action(
+        &self,
+        action: &str,
+        app: &tauri::AppHandle,
+    ) -> Result<serde_json::Value, String> {
         if action == "test_all" {
-            let app_handle = app.clone(); let manager = self.manager.clone();
+            let app_handle = app.clone();
+            let manager = self.manager.clone();
             tauri::async_runtime::spawn(async move {
-                let alerts = vec![ TwitchAlert::Follow { user_name: "Entity_Alpha".into() } ];
-                for alert in alerts { update_alert(&app_handle, &manager.alert_state, alert); tokio::time::sleep(std::time::Duration::from_millis(1500)).await; }
+                let alerts = vec![TwitchAlert::Follow {
+                    user_name: "Entity_Alpha".into(),
+                }];
+                for alert in alerts {
+                    update_alert(&app_handle, &manager.alert_state, alert);
+                    tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+                }
             });
             Ok(serde_json::json!({ "status": "initiated" }))
-        } else { Err("Unknown action".to_string()) }
+        } else {
+            Err("Unknown action".to_string())
+        }
     }
 }
 
 impl PanopticPlugin for TwitchChatPlugin {
-    fn id(&self) -> &'static str { "twitch_chat" }
-    fn name(&self) -> &'static str { "Twitch Chat" }
+    fn id(&self) -> &'static str {
+        "twitch_chat"
+    }
+    fn name(&self) -> &'static str {
+        "Twitch Chat"
+    }
     fn register_routes(&self, router: Router<AppState>) -> Router<AppState> {
         let chat_state = self.manager.chat_state.clone();
-        router.route("/twitch/chat", get(move |AxumState(app_state): AxumState<AppState>| {
-            let state = chat_state.lock().unwrap().clone();
-            let settings = if let Some(path) = app_state.settings_path {
-                let settings = std::fs::read_to_string(path).ok().and_then(|s| serde_json::from_str::<AppSettings>(&s).ok());
-                settings.and_then(|s| s.plugins.get("twitch_chat").cloned()).unwrap_or_else(|| serde_json::json!({}))
-            } else { serde_json::json!({}) };
-            async move { axum::Json(serde_json::json!({ "messages": state.messages, "settings": settings })) }
-        })).route("/overlay/twitch/chat", get(panoptic_server::handlers::twitch::get_twitch_chat_overlay))
+        router
+            .route(
+                "/twitch/chat",
+                get(move |AxumState(app_state): AxumState<AppState>| {
+                    let state = chat_state.lock().unwrap().clone();
+                    let settings = if let Some(path) = app_state.settings_path {
+                        let settings = std::fs::read_to_string(path)
+                            .ok()
+                            .and_then(|s| serde_json::from_str::<AppSettings>(&s).ok());
+                        settings
+                            .and_then(|s| s.plugins.get("twitch_chat").cloned())
+                            .unwrap_or_else(|| serde_json::json!({}))
+                    } else {
+                        serde_json::json!({})
+                    };
+                    async move {
+                        axum::Json(
+                            serde_json::json!({ "messages": state.messages, "settings": settings }),
+                        )
+                    }
+                }),
+            )
+            .route(
+                "/overlay/twitch/chat",
+                get(panoptic_server::handlers::twitch::get_twitch_chat_overlay),
+            )
     }
     fn settings_definition(&self) -> Option<PluginSettingsDefinition> {
         Some(PluginSettingsDefinition {
             category: PluginCategory::Overlay,
             fields: vec![
-                SettingField { key: "message_template".into(), label: "Message Template".into(), description: Some("Format: {badges} {pronouns} {user}: {message}".into()), field_type: SettingFieldType::Text, default_value: serde_json::json!("{badges} {pronouns} {user}: {message}") },
-                SettingField { key: "chat_animation".into(), label: "Entrance Animation".into(), description: Some("Choose how messages appear.".into()), field_type: SettingFieldType::Select { options: vec!["Slide".into(), "Fade".into(), "Pop".into(), "Bounce".into()] }, default_value: serde_json::json!("Slide") },
-                SettingField { key: "chat_frame_style".into(), label: "Frame Style".into(), description: Some("Add decorative elements to messages.".into()), field_type: SettingFieldType::Select { options: vec!["None".into(), "Glass".into(), "Neon".into(), "Retro".into()] }, default_value: serde_json::json!("None") },
-                SettingField { key: "chat_background_blur".into(), label: "Background Blur (px)".into(), description: Some("Glass-morphism effect intensity.".into()), field_type: SettingFieldType::Number, default_value: serde_json::json!(0) },
-                SettingField { key: "show_pronouns".into(), label: "Show Pronouns".into(), description: None, field_type: SettingFieldType::Boolean, default_value: serde_json::json!(true) },
-                SettingField { key: "show_badges".into(), label: "Show Badges".into(), description: None, field_type: SettingFieldType::Boolean, default_value: serde_json::json!(true) },
-                SettingField { key: "max_messages".into(), label: "Max Messages".into(), description: None, field_type: SettingFieldType::Number, default_value: serde_json::json!(50) },
-                SettingField { key: "test_chat".into(), label: "Test Chat".into(), description: None, field_type: SettingFieldType::Action { button_label: "Simulate Message".into(), action_name: "test_msg".into() }, default_value: serde_json::Value::Null },
+                SettingField {
+                    key: "message_template".into(),
+                    label: "Message Template".into(),
+                    description: Some("Format: {badges} {pronouns} {user}: {message}".into()),
+                    field_type: SettingFieldType::Text,
+                    default_value: serde_json::json!("{badges} {pronouns} {user}: {message}"),
+                },
+                SettingField {
+                    key: "chat_animation".into(),
+                    label: "Entrance Animation".into(),
+                    description: Some("Choose how messages appear.".into()),
+                    field_type: SettingFieldType::Select {
+                        options: vec!["Slide".into(), "Fade".into(), "Pop".into(), "Bounce".into()],
+                    },
+                    default_value: serde_json::json!("Slide"),
+                },
+                SettingField {
+                    key: "chat_frame_style".into(),
+                    label: "Frame Style".into(),
+                    description: Some("Add decorative elements to messages.".into()),
+                    field_type: SettingFieldType::Select {
+                        options: vec!["None".into(), "Glass".into(), "Neon".into(), "Retro".into()],
+                    },
+                    default_value: serde_json::json!("None"),
+                },
+                SettingField {
+                    key: "chat_background_blur".into(),
+                    label: "Background Blur (px)".into(),
+                    description: Some("Glass-morphism effect intensity.".into()),
+                    field_type: SettingFieldType::Number,
+                    default_value: serde_json::json!(0),
+                },
+                SettingField {
+                    key: "show_pronouns".into(),
+                    label: "Show Pronouns".into(),
+                    description: None,
+                    field_type: SettingFieldType::Boolean,
+                    default_value: serde_json::json!(true),
+                },
+                SettingField {
+                    key: "show_badges".into(),
+                    label: "Show Badges".into(),
+                    description: None,
+                    field_type: SettingFieldType::Boolean,
+                    default_value: serde_json::json!(true),
+                },
+                SettingField {
+                    key: "max_messages".into(),
+                    label: "Max Messages".into(),
+                    description: None,
+                    field_type: SettingFieldType::Number,
+                    default_value: serde_json::json!(50),
+                },
+                SettingField {
+                    key: "test_chat".into(),
+                    label: "Test Chat".into(),
+                    description: None,
+                    field_type: SettingFieldType::Action {
+                        button_label: "Simulate Message".into(),
+                        action_name: "test_msg".into(),
+                    },
+                    default_value: serde_json::Value::Null,
+                },
             ],
         })
     }
-    fn handle_action(&self, action: &str, app: &tauri::AppHandle) -> Result<serde_json::Value, String> {
+    fn handle_action(
+        &self,
+        action: &str,
+        app: &tauri::AppHandle,
+    ) -> Result<serde_json::Value, String> {
         use tauri::Emitter;
         if action == "test_msg" {
-            let app_handle = app.clone(); let manager = self.manager.clone();
+            let app_handle = app.clone();
+            let manager = self.manager.clone();
             tauri::async_runtime::spawn(async move {
-                let info = { let lock = manager.broadcaster_info.lock().unwrap(); lock.clone() };
+                let info = {
+                    let lock = manager.broadcaster_info.lock().unwrap();
+                    lock.clone()
+                };
                 let msg = ChatMessageData {
                     id: format!("test_{}", rand::random::<u16>()),
-                    user_id: if info.id.is_empty() { "123".into() } else { info.id },
-                    user_login: if info.login.is_empty() { "streamer".into() } else { info.login },
-                    user_name: if info.display_name.is_empty() { "Streamer".into() } else { info.display_name },
+                    user_id: if info.id.is_empty() {
+                        "123".into()
+                    } else {
+                        info.id
+                    },
+                    user_login: if info.login.is_empty() {
+                        "streamer".into()
+                    } else {
+                        info.login
+                    },
+                    user_name: if info.display_name.is_empty() {
+                        "Streamer".into()
+                    } else {
+                        info.display_name
+                    },
                     message: "This is a test message! 🚀".to_string(),
                     color: "#8b5cf6".to_string(),
                     pronouns: Some("they/them".to_string()),
-                    badges: vec![ ChatBadge { set_id: "broadcaster".to_string(), id: "1".to_string(), info: "".to_string() } ],
-                    is_mod: false, is_sub: false, is_vip: false, is_broadcaster: true,
-                    timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
+                    badges: vec![ChatBadge {
+                        set_id: "broadcaster".to_string(),
+                        id: "1".to_string(),
+                        info: "".to_string(),
+                    }],
+                    is_mod: false,
+                    is_sub: false,
+                    is_vip: false,
+                    is_broadcaster: true,
+                    timestamp: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs(),
                 };
                 let _ = app_handle.emit("twitch_chat_message", msg.clone());
                 let mut state = manager.chat_state.lock().unwrap();
                 state.messages.push(msg);
             });
             Ok(serde_json::json!({ "status": "sent" }))
-        } else { Err("Unknown action".to_string()) }
+        } else {
+            Err("Unknown action".to_string())
+        }
     }
 }
 
 async fn simulate_mock_hype_train(app: &tauri::AppHandle, state_lock: &Arc<Mutex<HypeTrainState>>) {
     use tauri::Emitter;
     let mut state = state_lock.lock().unwrap();
-    state.active = true; state.level = 1; state.progress = 50; state.goal = 100;
-    state.top_contributions = vec![TwitchContribution { user_id: "1".into(), user_login: "alpha".into(), user_name: "Alpha".into(), type_field: "BITS".into(), total: 100 }];
+    state.active = true;
+    state.level = 1;
+    state.progress = 50;
+    state.goal = 100;
+    state.top_contributions = vec![TwitchContribution {
+        user_id: "1".into(),
+        user_login: "alpha".into(),
+        user_name: "Alpha".into(),
+        type_field: "BITS".into(),
+        total: 100,
+    }];
     let _ = app.emit("twitch_hype_train", state.clone());
 }
