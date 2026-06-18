@@ -283,6 +283,17 @@ body { -webkit-font-smoothing: antialiased; }
   font-weight: 600;
 }
 
+/* ── Chat Component ─────────────────────────────────────────── */
+.chat-message {
+  border: 1px solid rgba(var(--color-border-rgb), 0.4) !important;
+  background: rgba(var(--color-bg-rgb), 0.8) !important;
+  animation: toastPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.chat-pronouns {
+  color: var(--color-primary);
+}
+
 /* ── Corner ornaments ──────────────────────────────────────────── */
 .corner {
   position: absolute;

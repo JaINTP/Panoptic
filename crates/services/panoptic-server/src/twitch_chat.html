@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Twitch Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link id="overlay-style" rel="stylesheet" href="/overlay/twitch_chat/style.css">
+  <style>
+    body { background: transparent; overflow: hidden; margin: 0; padding: 0; }
+    #chat-container {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: var(--chat-container-width, 400px);
+      display: flex;
+      flex-direction: var(--chat-stack-direction, column);
+      gap: var(--chat-message-gap, 8px);
+      pointer-events: none;
+    }
+
+    .chat-message {
+      animation: chatSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+
+    @keyframes chatSlideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="chat-container">
+    <!-- Messages injected here -->
+  </div>
+
+  <script>
+    let currentCssVersion = 0;
+    const activeMessageIds = new Set();
+    let messageSettings = {};
+
+    async function poll() {
+      try {
+        const res = await fetch('/twitch/chat');
+        if (res.ok) {
+          const data = await res.json();
+          update(data.messages, data.settings);
+        }
+
+        const vRes = await fetch('/overlay/version');
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          if (vData.version > currentCssVersion) {
+            const link = document.getElementById('overlay-style');
+            link.href = `/overlay/twitch_chat/style.css?v=${vData.version}`;
+            currentCssVersion = vData.version;
+          }
+        }
+      } catch(e) {}
+    }
+
+    function update(messages, settings) {
+      if (!messages) return;
+      messageSettings = settings || {};
+      const maxMsgs = settings?.max_messages || 50;
+
+      const container = document.getElementById('chat-container');
+      
+      messages.forEach(msg => {
+        if (!activeMessageIds.has(msg.id)) {
+          spawnMessage(msg, settings);
+        }
+      });
+
+      while (container.children.length > maxMsgs) {
+        const first = container.firstChild;
+        activeMessageIds.delete(first.id);
+        container.removeChild(first);
+      }
+    }
+
+    function spawnMessage(msg, settings) {
+      const container = document.getElementById('chat-container');
+      activeMessageIds.add(msg.id);
+
+      const div = document.createElement('div');
+      div.id = msg.id;
+      
+      let classes = ['chat-message', 'panoptic-overlay-card'];
+      if (msg.is_mod) classes.push('chat-message-mod');
+      if (msg.is_broadcaster) classes.push('chat-message-broadcaster');
+      if (msg.is_vip) classes.push('chat-message-vip');
+      if (msg.is_sub) classes.push('chat-message-sub');
+      div.className = classes.join(' ');
+      
+      const showPronouns = settings?.show_pronouns ?? true;
+      const showBadges = settings?.show_badges ?? true;
+      const template = settings?.message_template || "{pronouns} {user}: {message}";
+
+      const pronounsHtml = (showPronouns && msg.pronouns) 
+        ? `<span class="chat-pronouns">[${msg.pronouns}]</span>`
+        : '';
+      
+      const badgesHtml = (showBadges && msg.badges)
+        ? `<span class="chat-badges-wrap">${msg.badges.map(b => `<span class="badge-${b.set_id}">[${b.set_id[0].toUpperCase()}]</span>`).join('')}</span>`
+        : '';
+
+      const content = template
+        .replace('{user}', `<span class="chat-username" style="color: ${msg.color}">${msg.user_name}</span>`)
+        .replace('{message}', `<span class="chat-text">${msg.message}</span>`)
+        .replace('{pronouns}', pronounsHtml)
+        .replace('{badges}', badgesHtml)
+        .replace('{color}', msg.color);
+
+      div.innerHTML = content;
+      container.appendChild(div);
+    }
+
+    setInterval(poll, 1000);
+    poll();
+  </script>
+</body>
+</html>

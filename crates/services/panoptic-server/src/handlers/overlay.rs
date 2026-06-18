@@ -47,12 +47,10 @@ pub async fn get_overlay_css(
     Path(overlay_id): Path<String>,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
-    let now_playing_default =
-        include_str!("../../../../../examples/now-playing/now-playing-default.css");
-    let hype_train_default =
-        include_str!("../../../../../examples/twitch-hype-train/hype-train-default.css");
-    let alerts_default =
-        include_str!("../../../../../examples/twitch-alerts/twitch-alerts-default.css");
+    let now_playing_default = include_str!("../../../../../examples/now-playing/now-playing-default.css");
+    let hype_train_default = include_str!("../../../../../examples/twitch-hype-train/hype-train-default.css");
+    let alerts_default = include_str!("../../../../../examples/twitch-alerts/twitch-alerts-default.css");
+    let chat_default = include_str!("../../../../../examples/themes/cyber_complete.css");
 
     let css = if let Some(ref path) = state.settings_path {
         let overlays_dir = path.parent().unwrap().join("overlays");
@@ -60,38 +58,27 @@ pub async fn get_overlay_css(
 
         if file_path.exists() {
             std::fs::read_to_string(file_path).unwrap_or_else(|_| {
-                if overlay_id == "now_playing" {
-                    now_playing_default.to_string()
-                } else if overlay_id == "twitch_hype_train" {
-                    hype_train_default.to_string()
-                } else if overlay_id == "twitch_alerts" {
-                    alerts_default.to_string()
-                } else {
-                    "".to_string()
-                }
+                if overlay_id == "now_playing" { now_playing_default.to_string() }
+                else if overlay_id == "twitch_hype_train" { hype_train_default.to_string() }
+                else if overlay_id == "twitch_alerts" { alerts_default.to_string() }
+                else if overlay_id == "twitch_chat" { chat_default.to_string() }
+                else { "".to_string() }
             })
         } else {
-            if overlay_id == "now_playing" {
-                now_playing_default.to_string()
-            } else if overlay_id == "twitch_hype_train" {
-                hype_train_default.to_string()
-            } else if overlay_id == "twitch_alerts" {
-                alerts_default.to_string()
-            } else {
-                "".to_string()
-            }
+            if overlay_id == "now_playing" { now_playing_default.to_string() }
+            else if overlay_id == "twitch_hype_train" { hype_train_default.to_string() }
+            else if overlay_id == "twitch_alerts" { alerts_default.to_string() }
+            else if overlay_id == "twitch_chat" { chat_default.to_string() }
+            else { "".to_string() }
         }
     } else {
-        if overlay_id == "now_playing" {
-            now_playing_default.to_string()
-        } else if overlay_id == "twitch_hype_train" {
-            hype_train_default.to_string()
-        } else if overlay_id == "twitch_alerts" {
-            alerts_default.to_string()
-        } else {
-            "".to_string()
-        }
+        if overlay_id == "now_playing" { now_playing_default.to_string() }
+        else if overlay_id == "twitch_hype_train" { hype_train_default.to_string() }
+        else if overlay_id == "twitch_alerts" { alerts_default.to_string() }
+        else if overlay_id == "twitch_chat" { chat_default.to_string() }
+        else { "".to_string() }
     };
+
 
     ([(header::CONTENT_TYPE, "text/css; charset=utf-8")], css)
 }

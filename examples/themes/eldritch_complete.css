@@ -196,3 +196,20 @@ body { font-style: italic; }
   font-weight: 700;
   text-shadow: 0 0 8px rgba(0, 85, 58, 0.3);
 }
+
+/* ── Chat Component ─────────────────────────────────────────── */
+.chat-message {
+  border-left: 3px solid var(--void-purple) !important;
+  background: rgba(10, 10, 16, 0.9) !important;
+  animation: eldritchChatIn 0.5s ease both;
+  font-family: var(--ht-font-family);
+}
+
+@keyframes eldritchChatIn {
+  from { opacity: 0; transform: skewX(5deg) translateX(-10px); }
+  to { opacity: 1; transform: skewX(0) translateX(0); }
+}
+
+.chat-pronouns {
+  color: var(--void-purple);
+}

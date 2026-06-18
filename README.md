@@ -119,6 +119,7 @@ For detailed technical documentation on how to fully customize or extend Panopti
 - [**Now Playing CSS Guide**](docs/Now-Playing-CSS.md) - Variables for layout, typography, and progress.
 - [**Hype Train CSS Guide**](docs/Hype-Train-CSS.md) - Variables for progress tiers and leaderboards.
 - [**Twitch Alerts CSS Guide**](docs/Twitch-Alerts-CSS.md) - Variables for dynamic stacking and professional transitions.
+- [**Twitch Chat CSS Guide**](docs/Twitch-Chat-CSS.md) - Variables for real-time chat and pronouns.
 - [**Plugin Development Guide**](docs/Plugin-Development.md) - How to extend Panoptic with your own Rust-based modules.
 
 ### 🗺️ Roadmap

@@ -184,8 +184,27 @@ body { text-transform: uppercase; letter-spacing: 1px; }
   text-shadow: 2px 2px var(--ht-color-primary), -1px -1px var(--ht-color-secondary);
 }
 
+/* ── Chat Component ─────────────────────────────────────────── */
+.chat-message {
+  border-width: 1px !important;
+  border-radius: 0;
+  background: rgba(var(--cyber-bg-rgb), 0.8) !important;
+  animation: chatSlideIn 0.3s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes chatSlideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.chat-username {
+  text-shadow: 0 0 10px currentColor;
+}
+
 /* ── Scanline Overlay ───────────────────────────────────────── */
-.panoptic-overlay-card::after, .hype-train-card::after, .alert-card::after {
+.panoptic-overlay-card::after, .hype-train-card::after, .alert-card::after, .chat-message::after {
   content: "";
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;

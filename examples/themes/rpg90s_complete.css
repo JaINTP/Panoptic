@@ -183,3 +183,19 @@ body { font-family: 'Press Start 2P', cursive !important; text-transform: upperc
   font-size: 8px !important;
   line-height: 1.8;
 }
+
+/* ── Chat Component ─────────────────────────────────────────── */
+.chat-message {
+  border: 2px solid var(--rpg-white) !important;
+  box-shadow: 2px 2px 0 #000 !important;
+  background: var(--rpg-blue) !important;
+  margin-bottom: 4px;
+}
+
+.chat-username {
+  font-size: 10px !important;
+}
+
+.chat-text {
+  font-size: 8px !important;
+}
