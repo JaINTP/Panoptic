@@ -199,6 +199,7 @@ body { font-style: italic; }
 
 /* ── Chat Component ─────────────────────────────────────────── */
 .chat-message {
+  display: block !important;
   border-left: 3px solid var(--void-purple) !important;
   background: rgba(10, 10, 16, 0.9) !important;
   color: var(--void-text) !important;

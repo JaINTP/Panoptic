@@ -186,6 +186,7 @@ body { text-transform: uppercase; letter-spacing: 1px; }
 
 /* ── Chat Component ─────────────────────────────────────────── */
 .chat-message {
+  display: block !important;
   border-width: 1px !important;
   border-radius: 0;
   background: rgba(var(--cyber-bg-rgb), 0.8) !important;

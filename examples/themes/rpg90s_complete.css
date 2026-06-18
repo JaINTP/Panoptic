@@ -186,6 +186,7 @@ body { font-family: 'Press Start 2P', cursive !important; text-transform: upperc
 
 /* ── Chat Component ─────────────────────────────────────────── */
 .chat-message {
+  display: block !important;
   border: 2px solid var(--rpg-white) !important;
   box-shadow: 2px 2px 0 #000 !important;
   background: var(--rpg-blue) !important;

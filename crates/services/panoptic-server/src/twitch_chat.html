@@ -28,6 +28,7 @@
     }
 
     .chat-message {
+      display: block !important; /* prevent panoptic-overlay-card flex layout leaking in */
       position: relative;
       overflow: hidden;
       backdrop-filter: blur(var(--chat-blur, 0px));
@@ -37,6 +38,16 @@
 
     .chat-text {
       color: #ffffff !important;
+      display: inline;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .chat-emote {
+      width: 28px;
+      height: 28px;
+      vertical-align: middle;
+      margin: -5px 0;
     }
 
     /* ── Animations ────────────────────────────────────────────── */
@@ -80,7 +91,6 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      margin-right: 6px;
       vertical-align: middle;
     }
 
@@ -200,12 +210,22 @@
           }).join('')}</span>`
         : '';
 
+      // Process fragments into HTML
+      const fragmentsHtml = msg.fragments.map(f => {
+        if (f.type === 'Emote') {
+          return `<img class="chat-emote" src="${f.data.url}" title="${f.data.text}" alt="${f.data.text}">`;
+        }
+        return `<span>${f.data}</span>`;
+      }).join('');
+
       const content = template
         .replace('{user}', `<span class="chat-username" style="color: ${msg.color}">${msg.user_name}</span>`)
-        .replace('{message}', `<span class="chat-text">${msg.message}</span>`)
+        .replace('{message}', `<span class="chat-text">${fragmentsHtml}</span>`)
         .replace('{pronouns}', pronounsHtml)
         .replace('{badges}', badgesHtml)
-        .replace('{color}', msg.color);
+        .replace('{color}', msg.color)
+        .replace(/ {2,}/g, ' ')
+        .trim();
 
       div.innerHTML = content;
       container.appendChild(div);

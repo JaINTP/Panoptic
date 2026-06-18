@@ -5,26 +5,40 @@ use axum::{
 };
 use panoptic_core::AppState;
 
+fn default_css(overlay_id: &str) -> String {
+    match overlay_id {
+        "now_playing" => {
+            include_str!("../../../../../examples/now-playing/now-playing-default.css").to_string()
+        }
+        "twitch_hype_train" => {
+            include_str!("../../../../../examples/twitch-hype-train/hype-train-default.css")
+                .to_string()
+        }
+        "twitch_alerts" => {
+            include_str!("../../../../../examples/twitch-alerts/twitch-alerts-default.css")
+                .to_string()
+        }
+        "twitch_chat" => {
+            include_str!("../../../../../examples/themes/cyber_complete.css").to_string()
+        }
+        _ => String::new(),
+    }
+}
+
 pub async fn get_overlay(State(state): State<AppState>) -> impl IntoResponse {
     let mut html = include_str!("../overlay.html").to_string();
 
-    // Default configuration values
     let mut config = serde_json::json!({
         "not_playing_title": "Not Playing",
         "not_playing_artist": "Unknown Artist",
         "not_playing_album": "Unknown Album"
     });
 
-    // Load custom text values from settings.json if present
     if let Some(ref path) = state.settings_path {
         if path.exists() {
             if let Ok(content) = std::fs::read_to_string(path) {
                 if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                    for key in [
-                        "not_playing_title",
-                        "not_playing_artist",
-                        "not_playing_album",
-                    ] {
+                    for key in ["not_playing_title", "not_playing_artist", "not_playing_album"] {
                         if let Some(v) = val.get(key) {
                             if v.is_string() && !v.as_str().unwrap().trim().is_empty() {
                                 config[key] = v.clone();
@@ -36,7 +50,6 @@ pub async fn get_overlay(State(state): State<AppState>) -> impl IntoResponse {
         }
     }
 
-    // Inject configuration script into head
     let inject_js = format!("<script>window.PanopticSettings = {};</script>", config);
     html = html.replace("<head>", &format!("<head>{}", inject_js));
 
@@ -47,38 +60,21 @@ pub async fn get_overlay_css(
     Path(overlay_id): Path<String>,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
-    let now_playing_default = include_str!("../../../../../examples/now-playing/now-playing-default.css");
-    let hype_train_default = include_str!("../../../../../examples/twitch-hype-train/hype-train-default.css");
-    let alerts_default = include_str!("../../../../../examples/twitch-alerts/twitch-alerts-default.css");
-    let chat_default = include_str!("../../../../../examples/themes/cyber_complete.css");
-
     let css = if let Some(ref path) = state.settings_path {
-        let overlays_dir = path.parent().unwrap().join("overlays");
-        let file_path = overlays_dir.join(format!("{}.css", overlay_id));
+        let file_path = path
+            .parent()
+            .unwrap()
+            .join("overlays")
+            .join(format!("{}.css", overlay_id));
 
         if file_path.exists() {
-            std::fs::read_to_string(file_path).unwrap_or_else(|_| {
-                if overlay_id == "now_playing" { now_playing_default.to_string() }
-                else if overlay_id == "twitch_hype_train" { hype_train_default.to_string() }
-                else if overlay_id == "twitch_alerts" { alerts_default.to_string() }
-                else if overlay_id == "twitch_chat" { chat_default.to_string() }
-                else { "".to_string() }
-            })
+            std::fs::read_to_string(file_path).unwrap_or_else(|_| default_css(&overlay_id))
         } else {
-            if overlay_id == "now_playing" { now_playing_default.to_string() }
-            else if overlay_id == "twitch_hype_train" { hype_train_default.to_string() }
-            else if overlay_id == "twitch_alerts" { alerts_default.to_string() }
-            else if overlay_id == "twitch_chat" { chat_default.to_string() }
-            else { "".to_string() }
+            default_css(&overlay_id)
         }
     } else {
-        if overlay_id == "now_playing" { now_playing_default.to_string() }
-        else if overlay_id == "twitch_hype_train" { hype_train_default.to_string() }
-        else if overlay_id == "twitch_alerts" { alerts_default.to_string() }
-        else if overlay_id == "twitch_chat" { chat_default.to_string() }
-        else { "".to_string() }
+        default_css(&overlay_id)
     };
-
 
     ([(header::CONTENT_TYPE, "text/css; charset=utf-8")], css)
 }
