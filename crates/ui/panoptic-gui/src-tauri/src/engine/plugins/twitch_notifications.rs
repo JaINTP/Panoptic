@@ -1,5 +1,5 @@
 use crate::engine::settings::AppSettings;
-use axum::{routing::get, Router, extract::State as AxumState};
+use axum::{extract::State as AxumState, routing::get, Router};
 use futures_util::StreamExt;
 use panoptic_core::{
     AppState, AuthState, PanopticPlugin, PluginCategory, PluginSettingsDefinition, SettingField,
@@ -154,7 +154,7 @@ impl TwitchEventManager {
 
     pub async fn init_pronouns(&self) {
         let client = reqwest::Client::new();
-        match client.get("https://pronouns.alejo.io/api/pronouns").send().await {
+        match client.get("https://api.pronouns.alejo.io/api/pronouns").send().await {
             Ok(res) => {
                 if let Ok(map) = res.json::<HashMap<String, String>>().await {
                     let mut p_map = self.pronoun_map.lock().unwrap();
@@ -178,17 +178,20 @@ impl TwitchEventManager {
         }
 
         let client = reqwest::Client::new();
-        let url = format!("https://pronouns.alejo.io/api/users/{}", login);
+        let url = format!("https://api.pronouns.alejo.io/api/users/{}", login);
         match client.get(&url).send().await {
             Ok(res) => {
                 if let Ok(user_data) = res.json::<serde_json::Value>().await {
-                    if let Some(p_id) = user_data["pronoun_id"].as_str() {
-                        let p_map = self.pronoun_map.lock().unwrap();
-                        if let Some(p_str) = p_map.get(p_id) {
-                            let mut cache = self.user_pronoun_cache.lock().unwrap();
-                            cache.insert(login.to_string(), p_str.clone());
-                            info!("Twitch Chat: Resolved pronouns for {}: {}", login, p_str);
-                            return Some(p_str.clone());
+                    // Alejo API returns an ARRAY of objects, e.g. [{ "pronoun_id": "..." }]
+                    if let Some(first) = user_data.as_array().and_then(|a| a.get(0)) {
+                        if let Some(p_id) = first["pronoun_id"].as_str() {
+                            let p_map = self.pronoun_map.lock().unwrap();
+                            if let Some(p_str) = p_map.get(p_id) {
+                                let mut cache = self.user_pronoun_cache.lock().unwrap();
+                                cache.insert(login.to_string(), p_str.clone());
+                                info!("Twitch Chat: Resolved pronouns for {}: {}", login, p_str);
+                                return Some(p_str.clone());
+                            }
                         }
                     }
                 }
