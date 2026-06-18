@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import CodeMirror from '@uiw/react-codemirror';
 import { css, cssLanguage } from '@codemirror/lang-css';
@@ -278,6 +277,7 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
                   field_type: { type: 'Text' },
                   default_value: 'Not Playing'
                 }}
+                category={null}
                 currentValue={notPlayingSettings.not_playing_title}
                 onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
                 onTriggerAction={() => {}}
@@ -290,6 +290,7 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
                   field_type: { type: 'Text' },
                   default_value: 'Unknown Artist'
                 }}
+                category={null}
                 currentValue={notPlayingSettings.not_playing_artist}
                 onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
                 onTriggerAction={() => {}}
@@ -302,6 +303,7 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
                   field_type: { type: 'Text' },
                   default_value: 'Unknown Album'
                 }}
+                category={null}
                 currentValue={notPlayingSettings.not_playing_album}
                 onUpdate={(key, val) => updateNotPlayingSetting(key, val)}
                 onTriggerAction={() => {}}
