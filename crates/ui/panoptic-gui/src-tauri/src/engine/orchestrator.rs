@@ -1,6 +1,7 @@
 use crate::engine::settings::AppSettings;
 use panoptic_core::{AuthState, PlaybackState};
 use std::time::Duration;
+use tauri::Manager;
 use tokio::sync::{mpsc, watch};
 use tracing::error;
 
@@ -110,14 +111,15 @@ impl EngineOrchestrator {
 
             state.formatted_output = formatted_string.clone();
 
-            // Write formatted track info to ~/.config/panoptic/current_track.txt
-            if let Ok(home) = std::env::var("HOME") {
-                let config_path = std::path::PathBuf::from(home).join(".config/panoptic");
-                if !config_path.exists() {
-                    let _ = std::fs::create_dir_all(&config_path);
+            // Write formatted track info to the app config dir as current_track.txt
+            // for use with OBS text sources. Uses Tauri's path resolver so it
+            // works on both Linux (~/.config/com.jaintp.panoptic/) and
+            // Windows (%APPDATA%\com.jaintp.panoptic\).
+            if let Ok(config_dir) = app_handle.path().app_config_dir() {
+                if !config_dir.exists() {
+                    let _ = std::fs::create_dir_all(&config_dir);
                 }
-                let file_path = config_path.join("current_track.txt");
-                let _ = std::fs::write(file_path, &formatted_string);
+                let _ = std::fs::write(config_dir.join("current_track.txt"), &formatted_string);
             }
 
             let _ = self.state_tx.send(state.clone());
