@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -37,7 +37,12 @@ function App() {
   });
 
   const [displayProgressMs, setDisplayProgressMs] = useState<number>(165000);
-  const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
+  const [, setLastUpdated] = useState<number>(Date.now());
+
+  // Refs for smooth interpolation — updated without triggering effect restarts
+  const baseProgressRef = useRef<number>(165000);
+  const baseTimeRef = useRef<number>(Date.now());
+  const prevPlaybackRef = useRef<PlaybackState | null>(null);
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [updateUrl, setUpdateUrl] = useState<string | null>(null);
   const [appVersion, setAppVersion] = useState<string>('Loading...');
@@ -137,28 +142,49 @@ function App() {
   // Listen for playback updates from Rust
   useEffect(() => {
     const unlisten = listen<PlaybackState>('playback_update', (event) => {
-      setPlayback(event.payload);
-      setLastUpdated(Date.now());
-      setDisplayProgressMs(event.payload.progress_ms);
+      const next = event.payload;
+      const now = Date.now();
+      const prev = prevPlaybackRef.current;
+
+      const isTrackChanged = !prev || prev.title !== next.title || prev.artist !== next.artist;
+      const wasNotPlaying = !prev || !prev.is_playing;
+
+      // Detect a seek: server position deviates > 3 s from where interpolation expects
+      const elapsed = now - baseTimeRef.current;
+      const expectedProgress = baseProgressRef.current + (prev?.is_playing ? elapsed : 0);
+      const isSeeked = !isTrackChanged && Math.abs(next.progress_ms - expectedProgress) > 3000;
+
+      if (isTrackChanged || wasNotPlaying || isSeeked) {
+        // Snap interpolation base to server value
+        baseProgressRef.current = next.progress_ms;
+        baseTimeRef.current = now;
+        setDisplayProgressMs(next.progress_ms);
+      }
+
+      prevPlaybackRef.current = next;
+      setPlayback(next);
+      setLastUpdated(now);
     });
     return () => {
       unlisten.then(f => f());
     };
   }, []);
 
-  // Smooth playback progress interpolation
+  // Smooth playback progress interpolation — only restarts on play/pause or track change
   useEffect(() => {
     if (!playback.is_playing) {
+      baseProgressRef.current = playback.progress_ms;
+      baseTimeRef.current = Date.now();
       setDisplayProgressMs(playback.progress_ms);
       return;
     }
     const interval = setInterval(() => {
-      const elapsed = Date.now() - lastUpdated;
-      const current = Math.min(playback.progress_ms + elapsed, playback.duration_ms);
+      const elapsed = Date.now() - baseTimeRef.current;
+      const current = Math.min(baseProgressRef.current + elapsed, playback.duration_ms);
       setDisplayProgressMs(current);
     }, 30);
     return () => clearInterval(interval);
-  }, [playback.is_playing, playback.progress_ms, playback.duration_ms, lastUpdated]);
+  }, [playback.is_playing, playback.title, playback.artist, playback.duration_ms]);
 
   const progressPercent = (playback && playback.duration_ms > 0)
     ? (displayProgressMs / playback.duration_ms) * 100

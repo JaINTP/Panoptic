@@ -34,7 +34,13 @@ export const OverlayPreview: React.FC<OverlayPreviewProps> = ({
       <div className="panoptic-overlay-card">
         <div className="panoptic-overlay-art-container">
           <img
-            src={playback.art_source || 'https://i.scdn.co/image/ab67616d0000b27370364408e063f2f0c76f4e17'}
+            src={
+              playback.art_source
+                ? playback.art_source.startsWith('file://')
+                  ? `http://127.0.0.1:3000/art?v=${encodeURIComponent(playback.art_source)}`
+                  : playback.art_source
+                : 'https://i.scdn.co/image/ab67616d0000b27370364408e063f2f0c76f4e17'
+            }
             alt="Album Art"
             className="panoptic-overlay-album-art"
           />
