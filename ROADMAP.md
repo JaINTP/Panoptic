@@ -44,6 +44,10 @@ Enable viewers to manipulate overlay visuals directly using Twitch Bits.
 
 ## 🛠️ Core Engine Improvements
 
+- ~~**Album Art in Overlay:** Display current track artwork in the Now Playing overlay via a local proxy endpoint that handles both `file://` (MPRIS/SMTC cache) and `https://` (Spotify CDN) sources, bypassing OBS browser source restrictions.~~
+  - **Shipped in v0.3.2:** `/art` proxy endpoint in the Axum server; SMTC thumbnail reading on Windows via synchronous COM spin-poll; MPRIS `mpris:artUrl` passthrough on Linux; cache-busting overlay JS.
+- ~~**Cross-Platform Storage Paths:** Use Tauri's path resolver (`app_config_dir`, `app_cache_dir`) instead of `$HOME`-based paths so config and artwork cache work correctly on Windows.~~
+  - **Shipped in v0.3.3/v0.3.4:** `current_track.txt` written to `app_config_dir`; artwork cached under `app_cache_dir/artworks`; Storage tab shows real resolved paths with working Browse buttons.
 - **Global Theme Swapper:** A single button in the UI to instantly swap between aesthetic packs across all plugins.
 - **Remote Configuration:** Secure web dashboard to tweak settings from a secondary device (phone/tablet).
 - **OBS WebSocket Integration:** Allow Panoptic actions to control OBS scenes and sources directly.

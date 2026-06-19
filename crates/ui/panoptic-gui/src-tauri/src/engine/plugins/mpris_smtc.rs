@@ -1,5 +1,7 @@
 use crate::engine::native::create_native_provider;
 use panoptic_core::{MediaProvider, PanopticPlugin, PluginSettingsDefinition};
+#[cfg(target_os = "windows")]
+use tauri::Manager;
 
 pub struct NativeMediaPlugin;
 
@@ -26,6 +28,17 @@ impl PanopticPlugin for NativeMediaPlugin {
 
     fn media_provider(&self) -> Option<Box<dyn MediaProvider>> {
         Some(create_native_provider())
+    }
+
+    fn setup(&self, app: &tauri::AppHandle) -> Result<(), String> {
+        #[cfg(target_os = "windows")]
+        if let Ok(mut cache_dir) = app.path().app_cache_dir() {
+            cache_dir.push("artworks");
+            panoptic_provider_windows::set_art_cache_dir(cache_dir);
+        }
+        #[cfg(not(target_os = "windows"))]
+        let _ = app;
+        Ok(())
     }
 
     fn settings_definition(&self) -> Option<PluginSettingsDefinition> {

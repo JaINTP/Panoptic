@@ -250,7 +250,7 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
   };
 
   const getOverlayUrl = (id: string) => {
-    const base = 'http://localhost:3000';
+    const base = 'http://127.0.0.1:3000';
     switch (id) {
       case 'now_playing': return `${base}/overlay/now-playing`;
       case 'twitch_hype_train': return `${base}/overlay/twitch/hype-train`;

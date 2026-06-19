@@ -23,8 +23,8 @@ use crate::commands::plugins::{
     get_plugin_settings, get_plugins_metadata, set_plugin_settings, trigger_plugin_action,
 };
 use crate::commands::settings::{
-    get_app_version, get_not_playing_settings, get_output_template, set_not_playing_settings,
-    set_output_template,
+    get_app_version, get_not_playing_settings, get_output_template, get_storage_paths,
+    set_not_playing_settings, set_output_template,
 };
 use crate::commands::stream_goals::{
     get_session_stats, get_stream_goals_config, reset_stream_goals_session, save_custom_vars,
@@ -118,6 +118,7 @@ pub fn run() {
             set_not_playing_settings,
             get_update_status,
             get_app_version,
+            get_storage_paths,
             // Stream Goals commands
             get_session_stats,
             reset_stream_goals_session,

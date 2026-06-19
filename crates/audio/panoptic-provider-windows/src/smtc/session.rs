@@ -3,6 +3,14 @@ use panoptic_core::PlaybackState;
 #[cfg(target_os = "windows")]
 use windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager;
 
+/// Set once at startup by `NativeMediaPlugin::setup()` via `app_handle.path().app_cache_dir()`.
+/// Falls back to `std::env::temp_dir()` if never set.
+static ART_CACHE_DIR: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
+
+pub fn set_art_cache_dir(path: std::path::PathBuf) {
+    let _ = ART_CACHE_DIR.set(path);
+}
+
 pub struct SmtcSessionManager;
 
 impl SmtcSessionManager {
@@ -47,9 +55,16 @@ impl SmtcSessionManager {
         // await boundary in this function.
         if let Ok(thumb_ref) = media_properties.Thumbnail() {
             if let Some(bytes) = try_read_thumbnail_sync(thumb_ref) {
-                let path = std::env::temp_dir().join("panoptic_art.jpg");
-                if std::fs::write(&path, &bytes).is_ok() {
-                    let url_path = path.to_string_lossy().replace('\\', "/");
+                let ext = detect_image_ext(&bytes);
+                let cache_dir = ART_CACHE_DIR
+                    .get()
+                    .cloned()
+                    .unwrap_or_else(std::env::temp_dir);
+                let _ = std::fs::create_dir_all(&cache_dir);
+                let filename = format!("panoptic_art.{}", ext);
+                let art_path = cache_dir.join(&filename);
+                if std::fs::write(&art_path, &bytes).is_ok() {
+                    let url_path = art_path.to_string_lossy().replace('\\', "/");
                     state.art_source = format!("file:///{}", url_path);
                 }
             }
@@ -61,6 +76,18 @@ impl SmtcSessionManager {
     #[cfg(not(target_os = "windows"))]
     pub async fn get_active_session_state() -> Result<panoptic_core::PlaybackState, String> {
         Err("SMTC is only available on Windows".to_string())
+    }
+}
+
+/// Detect whether bytes are PNG or JPEG by magic bytes; defaults to "jpg".
+#[cfg(target_os = "windows")]
+fn detect_image_ext(bytes: &[u8]) -> &'static str {
+    if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
+        "png"
+    } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        "jpg"
+    } else {
+        "jpg"
     }
 }
 

@@ -1,4 +1,5 @@
 use crate::engine::settings::AppSettings;
+use tauri::Manager;
 
 #[tauri::command]
 pub fn get_output_template(app: tauri::AppHandle) -> Result<Option<String>, String> {
@@ -40,4 +41,24 @@ pub fn set_not_playing_settings(
 #[tauri::command]
 pub fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
+pub fn get_storage_paths(app: tauri::AppHandle) -> serde_json::Value {
+    let config_dir = app
+        .path()
+        .app_config_dir()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
+
+    let artwork_dir = app
+        .path()
+        .app_cache_dir()
+        .map(|mut p| { p.push("artworks"); p.to_string_lossy().to_string() })
+        .unwrap_or_default();
+
+    serde_json::json!({
+        "config_dir": config_dir,
+        "artwork_dir": artwork_dir,
+    })
 }
