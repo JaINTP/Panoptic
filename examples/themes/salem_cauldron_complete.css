@@ -401,13 +401,8 @@ body { -webkit-font-smoothing: antialiased; }
   filter: drop-shadow(0 0 5px var(--color-secondary));
 }
 
-/* Shimmer sweep on ring fill using a keyframe overlay trick */
-.pomodoro-ring-wrap::after {
-  content: '';
+/* Ensure time display sits above any card pseudo-elements */
+.pomodoro-time-wrap {
   position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(transparent 50%, rgba(255,255,255,0.06) 75%, transparent 100%);
-  animation: shimmer 3s linear infinite;
-  pointer-events: none;
+  z-index: 1;
 }

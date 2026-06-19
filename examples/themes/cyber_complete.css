@@ -251,13 +251,21 @@ body { text-transform: uppercase; letter-spacing: 1px; }
   --pomodoro-long-break-dot-color:   #00ff88;
 }
 
-/* Sharp cyber clip on the card */
+/* Sharp cyber clip on the card - notch bottom-right corner */
 .pomodoro-card {
-  clip-path: polygon(0 0, 100% 0, 100% 85%, 92% 100%, 0 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 90%, 96% 100%, 0 100%);
   position: relative;
 }
 
-/* Scanlines carry over to the timer */
+/* Phase, ring, and dots sit above the scanline overlay */
+.pomodoro-phase,
+.pomodoro-ring-wrap,
+.pomodoro-dots {
+  position: relative;
+  z-index: 1;
+}
+
+/* Scanlines carry over to the timer - z-index 0 so content stays on top */
 .pomodoro-card::after {
   content: "";
   position: absolute;
@@ -265,7 +273,7 @@ body { text-transform: uppercase; letter-spacing: 1px; }
   background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
   background-size: 100% 4px;
   pointer-events: none;
-  z-index: 10;
+  z-index: 0;
 }
 
 /* Glitch flicker on the phase label */

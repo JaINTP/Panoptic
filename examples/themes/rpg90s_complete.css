@@ -219,11 +219,11 @@ body { font-family: 'Press Start 2P', cursive !important; text-transform: upperc
   --pomodoro-card-gap:          10px;
 
   --pomodoro-phase-font:        'Press Start 2P', monospace;
-  --pomodoro-phase-size:        7px;
+  --pomodoro-phase-size:        8px;
   --pomodoro-time-font:         'Press Start 2P', monospace;
   --pomodoro-time-size:         18px;
   --pomodoro-status-font:       'Press Start 2P', monospace;
-  --pomodoro-status-size:       6px;
+  --pomodoro-status-size:       8px;
 
   --pomodoro-time-color:        var(--rpg-white);
   --pomodoro-ring-track-color:  rgba(255, 255, 255, 0.15);
