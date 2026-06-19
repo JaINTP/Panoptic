@@ -1,5 +1,5 @@
 use super::models::{
-    AlertState, ChatState, HypeTrainState, PronounEntry, TwitchBroadcasterInfo,
+    AlertState, ChatState, HypeTrainState, PronounEntry, SessionStats, TwitchBroadcasterInfo,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -14,6 +14,8 @@ pub struct TwitchEventManager {
     pub user_pronoun_cache: Arc<Mutex<HashMap<String, String>>>,
     pub badge_cache: Arc<Mutex<HashMap<String, HashMap<String, String>>>>,
     pub emote_cache: Arc<Mutex<HashMap<String, String>>>,
+    /// Shared session statistics updated by every incoming EventSub event.
+    pub session_stats: Arc<Mutex<SessionStats>>,
 }
 
 impl TwitchEventManager {
@@ -37,6 +39,7 @@ impl TwitchEventManager {
             user_pronoun_cache: Arc::new(Mutex::new(HashMap::new())),
             badge_cache: Arc::new(Mutex::new(HashMap::new())),
             emote_cache: Arc::new(Mutex::new(HashMap::new())),
+            session_stats: Arc::new(Mutex::new(SessionStats::default())),
         }
     }
 

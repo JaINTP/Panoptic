@@ -54,6 +54,7 @@ pub async fn subscribe_all_events(
         ("channel.raid", "1"),
         ("channel.cheer", "1"),
         ("channel.chat.message", "1"),
+        ("channel.channel_points_custom_reward_redemption.add", "1"),
     ];
 
     for (sub_type, version) in subs {
@@ -181,81 +182,145 @@ pub async fn handle_event(
     use tauri::Emitter;
     match sub_type {
         "channel.hype_train.begin" | "channel.hype_train.progress" => {
-            let mut state = manager.hype_state.lock().unwrap();
-            state.active = true;
-            state.level = event["level"].as_u64().unwrap_or(1) as u32;
-            state.total = event["total"].as_u64().unwrap_or(0) as u32;
-            state.progress = event["progress"].as_u64().unwrap_or(0) as u32;
-            state.goal = event["goal"].as_u64().unwrap_or(100) as u32;
-            if let Some(top) = event["top_contributions"].as_array() {
-                state.top_contributions = top
-                    .iter()
-                    .map(|c| TwitchContribution {
-                        user_id: c["user_id"].as_str().unwrap_or_default().to_string(),
-                        user_login: c["user_login"].as_str().unwrap_or_default().to_string(),
-                        user_name: c["user_name"].as_str().unwrap_or_default().to_string(),
-                        type_field: c["type"].as_str().unwrap_or_default().to_string(),
-                        total: c["total"].as_u64().unwrap_or(0) as u32,
-                    })
-                    .collect();
+            let level = event["level"].as_u64().unwrap_or(1) as u32;
+            {
+                let mut state = manager.hype_state.lock().unwrap();
+                state.active = true;
+                state.level = level;
+                state.total = event["total"].as_u64().unwrap_or(0) as u32;
+                state.progress = event["progress"].as_u64().unwrap_or(0) as u32;
+                state.goal = event["goal"].as_u64().unwrap_or(100) as u32;
+                if let Some(top) = event["top_contributions"].as_array() {
+                    state.top_contributions = top
+                        .iter()
+                        .map(|c| TwitchContribution {
+                            user_id: c["user_id"].as_str().unwrap_or_default().to_string(),
+                            user_login: c["user_login"].as_str().unwrap_or_default().to_string(),
+                            user_name: c["user_name"].as_str().unwrap_or_default().to_string(),
+                            type_field: c["type"].as_str().unwrap_or_default().to_string(),
+                            total: c["total"].as_u64().unwrap_or(0) as u32,
+                        })
+                        .collect();
+                }
+                let _ = app.emit("twitch_hype_train", state.clone());
             }
-            let _ = app.emit("twitch_hype_train", state.clone());
+            // Track hype train level in session stats
+            {
+                let mut stats = manager.session_stats.lock().unwrap();
+                stats.hype_train_level = level as u64;
+            }
+            emit_session_stats(app, manager);
         }
         "channel.hype_train.end" => {
             let mut state = manager.hype_state.lock().unwrap();
             state.active = false;
             let _ = app.emit("twitch_hype_train", state.clone());
         }
-        "channel.follow" => update_alert(
-            app,
-            &manager.alert_state,
-            TwitchAlert::Follow {
-                user_name: event["user_name"].as_str().unwrap_or("Someone").to_string(),
-            },
-        ),
-        "channel.subscribe" => update_alert(
-            app,
-            &manager.alert_state,
-            TwitchAlert::Subscription {
-                user_name: event["user_name"].as_str().unwrap_or("Someone").to_string(),
-                tier: event["tier"].as_str().unwrap_or("1000").to_string(),
-                is_gift: event["is_gift"].as_bool().unwrap_or(false),
-                cumulative_months: event["cumulative_months"].as_u64().unwrap_or(1) as u32,
-            },
-        ),
-        "channel.subscription.gift" => update_alert(
-            app,
-            &manager.alert_state,
-            TwitchAlert::GiftSubscription {
-                user_name: event["user_name"].as_str().unwrap_or("Anonymous").to_string(),
-                total: event["total"].as_u64().unwrap_or(1) as u32,
-                tier: event["tier"].as_str().unwrap_or("1000").to_string(),
-                is_anonymous: event["is_anonymous"].as_bool().unwrap_or(false),
-            },
-        ),
-        "channel.raid" => update_alert(
-            app,
-            &manager.alert_state,
-            TwitchAlert::Raid {
-                from_broadcaster_name: event["from_broadcaster_user_name"]
-                    .as_str()
-                    .unwrap_or("Someone")
-                    .to_string(),
-                viewers: event["viewers"].as_u64().unwrap_or(0) as u32,
-            },
-        ),
-        "channel.cheer" => update_alert(
-            app,
-            &manager.alert_state,
-            TwitchAlert::Cheer {
-                user_name: event["user_name"].as_str().unwrap_or("Anon").to_string(),
-                bits: event["bits"].as_u64().unwrap_or(0) as u32,
-                message: event["message"].as_str().unwrap_or_default().to_string(),
-            },
-        ),
+        "channel.follow" => {
+            {
+                let mut stats = manager.session_stats.lock().unwrap();
+                stats.followers += 1;
+            }
+            emit_session_stats(app, manager);
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::Follow {
+                    user_name: event["user_name"].as_str().unwrap_or("Someone").to_string(),
+                },
+            );
+        }
+        "channel.subscribe" => {
+            {
+                let mut stats = manager.session_stats.lock().unwrap();
+                stats.subscribers += 1;
+            }
+            emit_session_stats(app, manager);
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::Subscription {
+                    user_name: event["user_name"].as_str().unwrap_or("Someone").to_string(),
+                    tier: event["tier"].as_str().unwrap_or("1000").to_string(),
+                    is_gift: event["is_gift"].as_bool().unwrap_or(false),
+                    cumulative_months: event["cumulative_months"].as_u64().unwrap_or(1) as u32,
+                },
+            );
+        }
+        "channel.subscription.gift" => {
+            let gift_count = event["total"].as_u64().unwrap_or(1);
+            {
+                let mut stats = manager.session_stats.lock().unwrap();
+                stats.gift_subs += gift_count;
+                // Each gift sub also counts toward subscribers
+                stats.subscribers += gift_count;
+            }
+            emit_session_stats(app, manager);
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::GiftSubscription {
+                    user_name: event["user_name"].as_str().unwrap_or("Anonymous").to_string(),
+                    total: gift_count as u32,
+                    tier: event["tier"].as_str().unwrap_or("1000").to_string(),
+                    is_anonymous: event["is_anonymous"].as_bool().unwrap_or(false),
+                },
+            );
+        }
+        "channel.raid" => {
+            {
+                let mut stats = manager.session_stats.lock().unwrap();
+                stats.raids += 1;
+            }
+            emit_session_stats(app, manager);
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::Raid {
+                    from_broadcaster_name: event["from_broadcaster_user_name"]
+                        .as_str()
+                        .unwrap_or("Someone")
+                        .to_string(),
+                    viewers: event["viewers"].as_u64().unwrap_or(0) as u32,
+                },
+            );
+        }
+        "channel.cheer" => {
+            let bits = event["bits"].as_u64().unwrap_or(0);
+            {
+                let mut stats = manager.session_stats.lock().unwrap();
+                stats.bits += bits;
+                stats.cheers_count += 1;
+            }
+            emit_session_stats(app, manager);
+            update_alert(
+                app,
+                &manager.alert_state,
+                TwitchAlert::Cheer {
+                    user_name: event["user_name"].as_str().unwrap_or("Anon").to_string(),
+                    bits: bits as u32,
+                    message: event["message"].as_str().unwrap_or_default().to_string(),
+                },
+            );
+        }
+        "channel.channel_points_custom_reward_redemption.add" => {
+            {
+                let mut stats = manager.session_stats.lock().unwrap();
+                stats.redemptions += 1;
+            }
+            emit_session_stats(app, manager);
+        }
         "channel.chat.message" => handle_chat_message(app, manager, event).await,
         _ => {}
     }
+}
+
+/// Emit a snapshot of session stats so the frontend and stream-goals overlay
+/// can react in real time without polling.
+fn emit_session_stats(app: &tauri::AppHandle, manager: &TwitchEventManager) {
+    use tauri::Emitter;
+    let stats = manager.session_stats.lock().unwrap().clone();
+    let _ = app.emit("session_stats_update", stats);
 }
 
 async fn handle_chat_message(
@@ -265,6 +330,9 @@ async fn handle_chat_message(
 ) {
     use tauri::Emitter;
     let user_login = event["chatter_user_login"].as_str().unwrap_or_default().to_string();
+    let user_id = event["chatter_user_id"].as_str().unwrap_or_default().to_string();
+    let is_first_msg = event["is_first_msg"].as_bool().unwrap_or(false);
+
     let pronouns = manager.get_user_pronouns(&user_login).await;
 
     let badges = resolve_badges(manager, &event);
@@ -275,10 +343,24 @@ async fn handle_chat_message(
     let is_vip = badges.iter().any(|b| b.set_id == "vip");
     let is_sub = badges.iter().any(|b| b.set_id == "subscriber");
 
+    // Update session chat stats
+    {
+        let mut stats = manager.session_stats.lock().unwrap();
+        stats.chat_messages += 1;
+        let is_new_to_session = stats.seen_chatter_ids.insert(user_id.clone());
+        if is_new_to_session {
+            stats.unique_chatters += 1;
+        }
+        if is_first_msg {
+            stats.new_chatters += 1;
+        }
+    }
+    emit_session_stats(app, manager);
+
     let mut state = manager.chat_state.lock().unwrap();
     let msg = ChatMessageData {
         id: event["message_id"].as_str().unwrap_or_default().to_string(),
-        user_id: event["chatter_user_id"].as_str().unwrap_or_default().to_string(),
+        user_id,
         user_login,
         user_name: event["chatter_user_name"].as_str().unwrap_or_default().to_string(),
         message: event["message"]["text"].as_str().unwrap_or_default().to_string(),

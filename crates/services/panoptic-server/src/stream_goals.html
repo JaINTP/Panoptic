@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream Goals</title>
+  <link id="overlay-style" rel="stylesheet" href="/overlay/stream_goals/style.css">
+  <style>
+    body {
+      background: transparent;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      font-family: var(--sg-font-family, 'Segoe UI', system-ui, sans-serif);
+    }
+
+    :root {
+      --sg-bg: rgba(10, 8, 18, 0.88);
+      --sg-bg-rgb: 10, 8, 18;
+      --sg-border: rgba(157, 78, 221, 0.35);
+      --sg-accent: #9d4edd;
+      --sg-accent-rgb: 157, 78, 221;
+      --sg-text: #e8e6f5;
+      --sg-text-sub: #a89ebd;
+      --sg-track-bg: rgba(255,255,255,0.08);
+      --sg-radius: 10px;
+      --sg-bar-height: 10px;
+      --sg-font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #goals-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 320px;
+      max-width: 400px;
+      pointer-events: none;
+    }
+
+    .goal-card {
+      background: var(--sg-bg);
+      border: 1px solid var(--sg-border);
+      border-radius: var(--sg-radius);
+      padding: 12px 14px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow:
+        0 0 20px rgba(var(--sg-accent-rgb), 0.12),
+        0 4px 20px rgba(0, 0, 0, 0.6);
+      transition: transform 0.3s ease;
+    }
+
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .goal-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sg-text);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .goal-numbers {
+      font-size: 11px;
+      color: var(--sg-text-sub);
+      white-space: nowrap;
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+
+    .goal-track {
+      width: 100%;
+      height: var(--sg-bar-height);
+      background: var(--sg-track-bg);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .goal-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      position: relative;
+      min-width: 4px;
+    }
+
+    .goal-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+      border-radius: 999px;
+    }
+
+    .goal-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 5px;
+    }
+
+    .goal-pct {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--sg-text-sub);
+    }
+
+    /* Milestone celebration: flash + glow at 100% */
+    @keyframes sg-milestone-flash {
+      0%   { box-shadow: 0 0 0 rgba(var(--sg-accent-rgb), 0); }
+      25%  { box-shadow: 0 0 30px 8px rgba(var(--sg-accent-rgb), 0.8); }
+      50%  { box-shadow: 0 0 10px 2px rgba(var(--sg-accent-rgb), 0.3); }
+      75%  { box-shadow: 0 0 30px 8px rgba(var(--sg-accent-rgb), 0.7); }
+      100% { box-shadow: 0 0 20px 4px rgba(var(--sg-accent-rgb), 0.4); }
+    }
+
+    @keyframes sg-fill-glow {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.75; }
+    }
+
+    .goal-card.milestone {
+      animation: sg-milestone-flash 1.6s ease-in-out infinite;
+    }
+
+    .goal-card.milestone .goal-fill {
+      animation: sg-fill-glow 1.2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="goals-container"></div>
+
+  <script>
+    let currentCssVersion = 0;
+    let prevState = null;
+
+    async function poll() {
+      try {
+        const res = await fetch('/stream-goals/state');
+        if (res.ok) {
+          const data = await res.json();
+          render(data);
+        }
+
+        const vRes = await fetch('/overlay/version');
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          if (vData.version > currentCssVersion) {
+            const link = document.getElementById('overlay-style');
+            link.href = `/overlay/stream_goals/style.css?v=${vData.version}`;
+            currentCssVersion = vData.version;
+          }
+        }
+      } catch (e) {}
+    }
+
+    function resolveValue(variables, varName) {
+      const v = variables[varName];
+      return (v !== undefined && v !== null) ? Number(v) : 0;
+    }
+
+    function render(data) {
+      const { variables = {}, goals = [] } = data;
+      const container = document.getElementById('goals-container');
+      const enabled = goals.filter(g => g.enabled !== false);
+
+      // Build a map of existing cards by goal id for smooth updates
+      const existing = {};
+      container.querySelectorAll('[data-goal-id]').forEach(el => {
+        existing[el.dataset.goalId] = el;
+      });
+
+      // Remove cards for goals no longer present
+      const enabledIds = new Set(enabled.map(g => g.id));
+      Object.keys(existing).forEach(id => {
+        if (!enabledIds.has(id)) existing[id].remove();
+      });
+
+      enabled.forEach((goal, idx) => {
+        const current = resolveValue(variables, goal.variable);
+        const target = Number(goal.target) || 1;
+        const pct = Math.min(100, Math.round((current / target) * 100));
+        const color = goal.color || '#9d4edd';
+        const isMilestone = pct >= 100 && goal.milestone_celebration !== false;
+
+        let card = existing[goal.id];
+        if (!card) {
+          card = document.createElement('div');
+          card.className = 'goal-card';
+          card.dataset.goalId = goal.id;
+          card.innerHTML = `
+            <div class="goal-header">
+              <span class="goal-label"></span>
+              <span class="goal-numbers"></span>
+            </div>
+            <div class="goal-track">
+              <div class="goal-fill"></div>
+            </div>
+            <div class="goal-footer">
+              <span class="goal-pct"></span>
+            </div>
+          `;
+          container.appendChild(card);
+        }
+
+        card.querySelector('.goal-label').textContent = goal.label || goal.variable;
+        card.querySelector('.goal-fill').style.width = `${pct}%`;
+        card.querySelector('.goal-fill').style.background = color;
+
+        const showNums = goal.show_numbers !== false;
+        const numEl = card.querySelector('.goal-numbers');
+        numEl.style.display = showNums ? '' : 'none';
+        if (showNums) numEl.textContent = `${current.toLocaleString()} / ${target.toLocaleString()}`;
+
+        const showPct = goal.show_percentage !== false;
+        const pctEl = card.querySelector('.goal-pct');
+        pctEl.style.display = showPct ? '' : 'none';
+        if (showPct) pctEl.textContent = `${pct}%`;
+
+        // Milestone celebration
+        if (isMilestone) {
+          // Use the goal's color for the glow via CSS custom property
+          card.style.setProperty('--sg-accent-rgb', hexToRgb(color));
+          card.classList.add('milestone');
+        } else {
+          card.classList.remove('milestone');
+        }
+      });
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result
+        ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+        : '157, 78, 221';
+    }
+
+    setInterval(poll, 2000);
+    poll();
+  </script>
+</body>
+</html>

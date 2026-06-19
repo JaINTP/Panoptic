@@ -9,6 +9,7 @@ pub mod engine {
         pub mod mpris_smtc;
         pub mod pomodoro;
         pub mod spotify;
+        pub mod stream_goals;
         pub mod twitch;
         pub mod twitch_notifications;
     }
@@ -24,6 +25,10 @@ use crate::commands::plugins::{
 use crate::commands::settings::{
     get_app_version, get_not_playing_settings, get_output_template, set_not_playing_settings,
     set_output_template,
+};
+use crate::commands::stream_goals::{
+    get_session_stats, get_stream_goals_config, reset_stream_goals_session, save_custom_vars,
+    save_goals_config, update_custom_var,
 };
 use crate::engine::orchestrator::{AppCommand, EngineOrchestrator};
 use crate::update::{get_update_status, UpdateStatus};
@@ -64,7 +69,12 @@ pub fn run() {
             ),
         ))
         .register(Box::new(
-            crate::engine::plugins::twitch_notifications::TwitchChatPlugin::new(twitch_manager),
+            crate::engine::plugins::twitch_notifications::TwitchChatPlugin::new(
+                twitch_manager.clone(),
+            ),
+        ))
+        .register(Box::new(
+            crate::engine::plugins::stream_goals::StreamGoalsPlugin::new(twitch_manager.clone()),
         ))
         .register(Box::new(
             crate::engine::plugins::pomodoro::PomodoroPlugin::new(),
@@ -75,6 +85,7 @@ pub fn run() {
     let auth_rx_for_app = auth_rx.clone();
     let cmd_tx_for_app = cmd_tx.clone();
     let update_status_for_app = update_status.clone();
+    let twitch_manager_for_app = twitch_manager.clone();
 
     let orchestrator = EngineOrchestrator::new(
         cmd_rx,
@@ -106,7 +117,14 @@ pub fn run() {
             get_not_playing_settings,
             set_not_playing_settings,
             get_update_status,
-            get_app_version
+            get_app_version,
+            // Stream Goals commands
+            get_session_stats,
+            reset_stream_goals_session,
+            get_stream_goals_config,
+            save_goals_config,
+            save_custom_vars,
+            update_custom_var
         ])
         .setup(move |app| {
             if let Err(e) = crate::logging::init_logging(app.handle()) {
@@ -119,6 +137,8 @@ pub fn run() {
             app.manage(update_status_for_app.clone());
             app.manage(css_version_tx);
             app.manage(plugins);
+            // Expose TwitchEventManager for stream-goals Tauri commands
+            app.manage(twitch_manager_for_app);
 
             let orchestrator_handle = app.handle().clone();
             std::thread::spawn(move || {

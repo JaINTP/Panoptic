@@ -117,3 +117,35 @@ pub(crate) struct PronounEntry {
     pub(crate) name: String,
     pub(crate) display: String,
 }
+
+/// Session-scoped counters updated by EventSub events.
+/// These reset on each stream session (or manually) and are used by the
+/// Stream Goals plugin and the variable template engine.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct SessionStats {
+    pub followers: u64,
+    pub subscribers: u64,
+    pub bits: u64,
+    pub raids: u64,
+    /// Hosts are deprecated on Twitch (removed 2022) — always 0.
+    pub hosts: u64,
+    /// Total gifted subs (sum of gift counts, not event count).
+    pub gift_subs: u64,
+    pub chat_messages: u64,
+    pub unique_chatters: u64,
+    /// Chatters whose first-ever message in the channel was this session
+    /// (`is_first_msg == true` in the EventSub payload).
+    pub new_chatters: u64,
+    pub hype_train_level: u64,
+    /// Number of distinct Cheer events (not total bits).
+    pub cheers_count: u64,
+    pub redemptions: u64,
+    /// Current viewer count — polled periodically from Helix /streams.
+    pub viewer_count: u64,
+    pub stream_title: String,
+    pub category: String,
+
+    /// Internal: tracks user IDs that have chatted this session (not serialised).
+    #[serde(skip)]
+    pub seen_chatter_ids: std::collections::HashSet<String>,
+}
