@@ -71,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={handleOpenUpdate}
-            title={`v${updateVersion} is available on GitHub`}
+            title={`${updateVersion} is available on GitHub`}
             style={{
               flex: 1,
               display: 'flex',
