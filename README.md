@@ -36,6 +36,19 @@ Full support for real-time Twitch events via EventSub WebSocket:
 
 > **Note:** After updating to v0.1.9, Twitch API credentials must be re-linked. The plugin state was restructured - re-authenticate via **Settings → Twitch** before use.
 
+### ⏲️ Pomodoro Timer
+Focus/break cycle overlay for streamers:
+- **Circular progress ring** with configurable work, short break, and long break durations.
+- **Session dots** tracking completed work blocks before each long break.
+- **Automation event** (`pomodoro_phase_complete`) emitted on phase transitions for use with other integrations.
+- Full CSS variable theming; all four master theme packs include Pomodoro styles.
+
+### 🏆 Stream Goals
+Live progress bars powered by Twitch EventSub:
+- Tracks **Followers**, **Subscribers**, and **Bits** against configurable targets.
+- Per-session delta tracking with a reset button.
+- **Custom variables** for template interpolation in goal titles (e.g. `{streamer}`, `{game}`).
+
 ### 🎨 High-Fidelity Theming
 - **Live CSS Editor:** Side-by-side workspace with a real-time preview. Styles are injected instantly as you type.
 - **Sticky Previews:** The preview container stays fixed at the top while you scroll through settings, ensuring you always see the visual impact of your changes.
@@ -114,6 +127,8 @@ Add a new Browser source in OBS and point it to:
 - **Hype Train:** `http://localhost:3000/overlay/twitch/hype-train`
 - **Alerts:** `http://localhost:3000/overlay/twitch/alerts`
 - **Chat:** `http://localhost:3000/overlay/twitch_chat`
+- **Pomodoro Timer:** `http://localhost:3000/overlay/pomodoro`
+- **Stream Goals:** `http://localhost:3000/overlay/stream-goals`
 
 The overlays pull their CSS directly from your Panoptic configuration.
 

@@ -10,10 +10,11 @@ Extend the live chat overlay with cross-plugin visual reactivity.
 - **Key Feature:** Thematic Filtering—chat messages trigger visual effects across other overlays (e.g. a keyword flashes the hype train, a sub triggers a global colour shift).
 - **Shipped in v0.1.9:** Core chat overlay with badge/emote image resolution, pronoun display, and configurable frame and animation styles.
 
-### 🏆 Universal Stream Goals
-Dynamic progress bars for Followers, Subscribers, and Bits with advanced animation support.
-- **Status:** Planning
-- **Key Feature:** Multi-Stage Goals—reaching a milestone can automatically trigger a theme swap.
+### ~~🏆 Universal Stream Goals~~
+~~Dynamic progress bars for Followers, Subscribers, and Bits with advanced animation support.~~
+- ~~**Status:** Planning~~
+- ~~**Key Feature:** Multi-Stage Goals - reaching a milestone can automatically trigger a theme swap.~~
+- **Shipped in v0.3.0:** Live follower, subscriber, and cheer progress bars driven by Twitch EventSub. Configurable targets, session tracking, custom variable template interpolation, and a session reset button in the settings panel.
 
 ### 🎙️ "Talk-Back" Avatar Visualizer
 A microphone-reactive indicator or character for streamers who prefer not to use a face-cam.
