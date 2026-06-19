@@ -236,7 +236,7 @@ impl PanopticPlugin for SpotifyPlugin {
                     *store = Some(verifier);
                 }
 
-                let redirect_uri = "http://localhost:3000/callback/spotify";
+                let redirect_uri = "http://127.0.0.1:3000/callback/spotify";
                 let encoded_redirect = urlencoding::encode(redirect_uri);
                 let url = format!(
                     "https://accounts.spotify.com/authorize?client_id={}&response_type=code&redirect_uri={}&code_challenge_method=S256&code_challenge={}&scope=user-read-currently-playing",
@@ -386,7 +386,7 @@ async fn exchange_tokens(
     let params = [
         ("grant_type", "authorization_code"),
         ("code", code),
-        ("redirect_uri", "http://localhost:3000/callback/spotify"),
+        ("redirect_uri", "http://127.0.0.1:3000/callback/spotify"),
         ("client_id", client_id),
         ("code_verifier", code_verifier),
     ];

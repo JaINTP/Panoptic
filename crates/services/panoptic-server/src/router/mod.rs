@@ -1,4 +1,5 @@
 use crate::handlers::{
+    art::get_art,
     auth::auth_callback,
     health::HealthHandler,
     overlay::{get_overlay, get_overlay_css, get_overlay_version},
@@ -22,6 +23,7 @@ impl AppRouter {
 
         let mut router = Router::new()
             .route("/health", get(HealthHandler::check))
+            .route("/art", get(get_art))
             .route("/callback/:provider", get(auth_callback))
             .route("/current-track", get(get_current_track))
             .route("/playback", get(get_playback))

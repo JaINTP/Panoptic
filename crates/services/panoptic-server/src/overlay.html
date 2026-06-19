@@ -90,9 +90,14 @@
       wrapper.setAttribute('data-playing', state.is_playing ? 'true' : 'false');
       
       if (state.art_source) {
-        art.src = state.art_source;
+        const artUrl = '/art?v=' + encodeURIComponent(state.art_source);
+        if (art.dataset.artSrc !== state.art_source) {
+          art.dataset.artSrc = state.art_source;
+          art.src = artUrl;
+        }
         art.style.display = 'block';
       } else {
+        art.dataset.artSrc = '';
         art.style.display = 'none';
       }
 
