@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import CodeMirror from '@uiw/react-codemirror';
 import { css, cssLanguage } from '@codemirror/lang-css';
@@ -9,10 +10,18 @@ import { OverlayPreview, PlaybackState } from '../components/OverlayPreview';
 import { HypeTrainPreview, HypeTrainState } from '../components/HypeTrainPreview';
 import { TwitchAlertPreview, AlertState } from '../components/TwitchAlertPreview';
 import { TwitchChatPreview, ChatState, ChatMessageData } from '../components/TwitchChatPreview';
-import { PomodoroPreview, PomodoroState, DEFAULT_POMODORO_STATE } from '../components/PomodoroPreview';
+import { PomodoroPreview, PomodoroState, DEFAULT_POMODORO_STATE, POMODORO_DEFAULT_CSS } from '../components/PomodoroPreview';
 import { SettingsField, PluginDef } from '../components/SettingsField';
 import { TwitchAlertPlaceholderGrid } from '../components/TwitchAlertPlaceholderGrid';
 import { TwitchChatPlaceholderGrid } from '../components/TwitchChatPlaceholderGrid';
+import {
+  StreamGoalsPreview,
+  GoalConfig,
+  CustomVar,
+  SessionStats,
+  DEFAULT_SESSION_STATS,
+} from '../components/StreamGoalsPreview';
+import { StreamGoalsConfig } from '../components/StreamGoalsConfig';
 
 // Autocomplete and Lint helpers
 const PANOPTIC_CLASSES = [
@@ -166,6 +175,11 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
 
   const [pomodoroState, setPomodoroState] = useState<PomodoroState>(DEFAULT_POMODORO_STATE);
 
+  // ── Stream Goals state ─────────────────────────────────────────────────────
+  const [streamGoals, setStreamGoals] = useState<GoalConfig[]>([]);
+  const [streamCustomVars, setStreamCustomVars] = useState<CustomVar[]>([]);
+  const [sessionStats, setSessionStats] = useState<SessionStats>(DEFAULT_SESSION_STATS);
+
   const focusedInputRef = useRef<{ pluginId: string, key: string } | null>(null);
 
   useEffect(() => {
@@ -188,6 +202,14 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
     const unlistenPomodoro = listen<PomodoroState>('pomodoro_tick', (event) => {
       setPomodoroState(event.payload);
     });
+    // Stream Goals: live session stats
+    const unlistenStats = listen<SessionStats>('session_stats_update', (event) => {
+      setSessionStats(event.payload);
+    });
+    // Stream Goals: custom var changes (from other sources / actions)
+    const unlistenVars = listen<CustomVar[]>('stream_goals_custom_var_update', (event) => {
+      setStreamCustomVars(event.payload);
+    });
 
     return () => {
       unlistenHype.then(f => f());
@@ -195,7 +217,22 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
       unlistenAlert.then(f => f());
       unlistenChat.then(f => f());
       unlistenPomodoro.then(f => f());
+      unlistenStats.then(f => f());
+      unlistenVars.then(f => f());
     };
+  }, []);
+
+  // Load initial stream goals config
+  useEffect(() => {
+    invoke<{ goals: GoalConfig[]; custom_vars: CustomVar[] }>('get_stream_goals_config')
+      .then((cfg) => {
+        setStreamGoals(cfg.goals ?? []);
+        setStreamCustomVars(cfg.custom_vars ?? []);
+      })
+      .catch(() => {});
+    invoke<SessionStats>('get_session_stats')
+      .then(setSessionStats)
+      .catch(() => {});
   }, []);
 
   const overlayTabs = [
@@ -219,6 +256,7 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
       case 'twitch_hype_train': return `${base}/overlay/twitch/hype-train`;
       case 'twitch_alerts': return `${base}/overlay/twitch/alerts`;
       case 'twitch_chat': return `${base}/overlay/twitch/chat`;
+      case 'stream_goals': return `${base}/overlay/stream-goals`;
       default: return `${base}/overlay/${id}`;
     }
   };
@@ -364,6 +402,19 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
                     <TwitchChatPlaceholderGrid onInsertPlaceholder={handleInsertAlertPlaceholder} />
                 </div>
             )}
+
+            {activeOverlay === 'stream_goals' && (
+                <div className="section" style={{ margin: 0 }}>
+                    <StreamGoalsConfig
+                        goals={streamGoals}
+                        customVars={streamCustomVars}
+                        stats={sessionStats}
+                        onGoalsChange={setStreamGoals}
+                        onCustomVarsChange={setStreamCustomVars}
+                        onStatsReset={() => setSessionStats(DEFAULT_SESSION_STATS)}
+                    />
+                </div>
+            )}
         </div>
     );
   };
@@ -412,6 +463,16 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
         return (
           <div style={{ transform: 'scale(0.85)', transformOrigin: 'center' }}>
             <PomodoroPreview state={pomodoroState} />
+          </div>
+        );
+      case 'stream_goals':
+        return (
+          <div style={{ transform: 'scale(0.75)', transformOrigin: 'center', width: '380px' }}>
+            <StreamGoalsPreview
+              goals={streamGoals}
+              customVars={streamCustomVars}
+              stats={sessionStats}
+            />
           </div>
         );
       default:
@@ -471,8 +532,8 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
               padding: '20px',
               position: 'relative'
             }}>
-              {/* Live CSS Injection for Preview */}
-              <style>{overlaysCss[activeOverlay] || ''}</style>
+              {/* Live CSS Injection for Preview - defaults first, custom rules win */}
+              <style>{activeOverlay === 'pomodoro' ? POMODORO_DEFAULT_CSS : ''}{overlaysCss[activeOverlay] || ''}</style>
               {renderPreview()}
             </div>
           </div>
