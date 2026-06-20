@@ -45,10 +45,11 @@
 
   <script>
     let isPlaying = false;
-    let progressMs = 0;
     let durationMs = 0;
-    let lastUpdate = Date.now();
     let currentCssVersion = 0;
+    let prevPlayback = null;
+    let baseProgressMs = 0;
+    let baseTime = Date.now();
 
     function formatTime(ms) {
       if (!ms || isNaN(ms) || ms < 0) return '0:00';
@@ -81,8 +82,10 @@
         duration.textContent = '0:00';
         art.style.display = 'none';
         isPlaying = false;
-        progressMs = 0;
         durationMs = 0;
+        prevPlayback = null;
+        baseProgressMs = 0;
+        baseTime = Date.now();
         updateProgressDOM();
         return;
       }
@@ -106,19 +109,33 @@
       album.textContent = state.album || 'Unknown Album';
       duration.textContent = formatTime(state.duration_ms);
 
+      const now = Date.now();
+      const prev = prevPlayback;
+      const isTrackChanged = !prev || prev.title !== state.title || prev.artist !== state.artist;
+      const wasNotPlaying = !prev || !prev.is_playing;
+
+      // Detect a seek: server position deviates > 3 s from where interpolation expects
+      const elapsed = now - baseTime;
+      const expectedProgress = baseProgressMs + (prev && prev.is_playing ? elapsed : 0);
+      const isSeeked = !isTrackChanged && Math.abs(state.progress_ms - expectedProgress) > 3000;
+
+      if (isTrackChanged || wasNotPlaying || isSeeked) {
+        baseProgressMs = state.progress_ms;
+        baseTime = now;
+      }
+
       isPlaying = state.is_playing;
-      progressMs = state.progress_ms;
       durationMs = state.duration_ms;
-      lastUpdate = Date.now();
+      prevPlayback = state;
 
       updateProgressDOM();
     }
 
     function updateProgressDOM() {
-      let currentProgress = progressMs;
+      let currentProgress = baseProgressMs;
       if (isPlaying) {
-        const elapsed = Date.now() - lastUpdate;
-        currentProgress = Math.min(progressMs + elapsed, durationMs);
+        const elapsed = Date.now() - baseTime;
+        currentProgress = Math.min(baseProgressMs + elapsed, durationMs);
       }
 
       const percent = durationMs > 0 ? (currentProgress / durationMs) * 100 : 0;
