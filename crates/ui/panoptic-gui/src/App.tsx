@@ -39,7 +39,7 @@ function App() {
   const [displayProgressMs, setDisplayProgressMs] = useState<number>(165000);
   const [, setLastUpdated] = useState<number>(Date.now());
 
-  // Refs for smooth interpolation — updated without triggering effect restarts
+  // Refs for smooth interpolation - updated without triggering effect restarts
   const baseProgressRef = useRef<number>(165000);
   const baseTimeRef = useRef<number>(Date.now());
   const prevPlaybackRef = useRef<PlaybackState | null>(null);
@@ -139,6 +139,17 @@ function App() {
     };
   }, []);
 
+  // Listen for css_updated event
+  useEffect(() => {
+    const unlisten = listen<any>('css_updated', (event) => {
+      console.log('CSS updated event received:', event.payload);
+      loadSettings();
+    });
+    return () => {
+      unlisten.then(f => f());
+    };
+  }, []);
+
   // Listen for playback updates from Rust
   useEffect(() => {
     const unlisten = listen<PlaybackState>('playback_update', (event) => {
@@ -170,7 +181,7 @@ function App() {
     };
   }, []);
 
-  // Smooth playback progress interpolation — only restarts on play/pause or track change
+  // Smooth playback progress interpolation - only restarts on play/pause or track change
   useEffect(() => {
     if (!playback.is_playing) {
       baseProgressRef.current = playback.progress_ms;

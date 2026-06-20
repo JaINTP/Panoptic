@@ -171,6 +171,11 @@ impl PanopticPlugin for TwitchChatPlugin {
                         .as_secs(),
                 };
                 let _ = app_handle.emit("twitch_chat_message", msg.clone());
+                crate::commands::overlay::process_thematic_filtering(
+                    &app_handle,
+                    &msg.message,
+                    msg.is_sub,
+                );
                 let mut state = manager.chat_state.lock().unwrap();
                 state.messages.push(msg);
             });

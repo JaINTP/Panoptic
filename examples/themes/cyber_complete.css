@@ -303,3 +303,36 @@ body { text-transform: uppercase; letter-spacing: 1px; }
 .pomodoro-card[data-phase="long_break"] .pomodoro-ring-fill {
   filter: drop-shadow(0 0 4px #00ff88);
 }
+
+/* ── Stream Goals Component ─────────────────────────────────── */
+.goal-card {
+  background: var(--cyber-bg) !important;
+  border: 2px solid var(--cyber-cyan) !important;
+  padding: 16px !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.3) !important;
+  font-family: 'Orbitron', 'Rajdhani', sans-serif !important;
+  color: #fff !important;
+  clip-path: polygon(0 0, 100% 0, 100% 90%, 95% 100%, 0 100%) !important;
+}
+.goal-label {
+  font-family: 'Orbitron', sans-serif !important;
+  color: #ffffff !important;
+  text-transform: uppercase !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+.goal-numbers, .goal-pct {
+  font-family: 'Rajdhani', sans-serif !important;
+  color: var(--cyber-pink) !important;
+  font-weight: 700 !important;
+}
+.goal-track {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border-radius: 0 !important;
+  height: 8px !important;
+}
+.goal-fill {
+  background: linear-gradient(90deg, var(--cyber-pink) 0%, var(--cyber-cyan) 100%) !important;
+  border-radius: 0 !important;
+}

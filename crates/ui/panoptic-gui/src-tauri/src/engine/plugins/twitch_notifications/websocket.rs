@@ -406,7 +406,8 @@ async fn handle_chat_message(
     if state.messages.len() > 100 {
         state.messages.remove(0);
     }
-    let _ = app.emit("twitch_chat_message", msg);
+    let _ = app.emit("twitch_chat_message", msg.clone());
+    crate::commands::overlay::process_thematic_filtering(app, &msg.message, msg.is_sub);
 }
 
 fn resolve_badges(manager: &TwitchEventManager, event: &serde_json::Value) -> Vec<ChatBadge> {

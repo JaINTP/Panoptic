@@ -27,6 +27,10 @@
 - **Spotify Plugin Refactor:** Updated the Spotify plugin to use the new provider-aware `AuthState` and the generic server callback handler. Updated its callback route to `/callback/spotify`.
 - **Modular Server Handlers:** Refactored the Axum server to export its handlers, allowing plugins to reuse generic logic for route registration.
 
+### Fixed
+
+- **System Storage Browse Buttons:** Fixed an issue where "Browse..." buttons next to "Artwork Cache" or "Config Directory" failed to open folders in the system file explorer due to Tauri v2 frontend capability restrictions. Added a custom Rust backend command `open_directory` utilizing `tauri-plugin-opener` to bypass the restrictions.
+
 ## [0.1.3] - 2026-06-14
 
 ### Added

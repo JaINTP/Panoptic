@@ -2,7 +2,7 @@ use crate::handlers::{
     art::get_art,
     auth::auth_callback,
     health::HealthHandler,
-    overlay::{get_overlay, get_overlay_css, get_overlay_version},
+    overlay::{get_active_effects, get_overlay, get_overlay_css, get_overlay_version},
     track::{get_current_track, get_playback},
 };
 use axum::{routing::get, Router};
@@ -29,6 +29,7 @@ impl AppRouter {
             .route("/playback", get(get_playback))
             .route("/overlay/now-playing", get(get_overlay))
             .route("/overlay/version", get(get_overlay_version))
+            .route("/overlay/effects", get(get_active_effects))
             .route("/overlay/:id/style.css", get(get_overlay_css));
 
         // Let each plugin register its own routes

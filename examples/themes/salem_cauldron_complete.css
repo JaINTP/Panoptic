@@ -406,3 +406,45 @@ body { -webkit-font-smoothing: antialiased; }
   position: absolute;
   z-index: 1;
 }
+
+/* ── Stream Goals Component ─────────────────────────────────── */
+.goal-card {
+  background: rgba(var(--color-bg-rgb), var(--color-bg-opacity)) !important;
+  border: 1px solid rgba(var(--color-border-rgb), 0.55) !important;
+  padding: 14px 16px !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    0 0 0 1px rgba(var(--color-primary-rgb), 0.12),
+    0 0 20px rgba(var(--color-primary-rgb), 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.6) !important;
+  font-family: var(--font-family) !important;
+  color: var(--color-text) !important;
+  position: relative !important;
+  animation: cardBreathe 6s ease-in-out infinite !important;
+}
+.goal-card::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 10% !important; right: 10% !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(var(--color-secondary-rgb), 0.8), transparent) !important;
+}
+.goal-label {
+  font-family: 'Cinzel Decorative', serif !important;
+  font-size: 13px !important;
+  color: var(--color-secondary) !important;
+}
+.goal-numbers, .goal-pct {
+  font-family: 'Cinzel', serif !important;
+  color: var(--color-subtext) !important;
+}
+.goal-track {
+  background: var(--color-progress-bg) !important;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.25) !important;
+  border-radius: 6px !important;
+  height: 10px !important;
+}
+.goal-fill {
+  background: linear-gradient(90deg, rgba(var(--color-progress-rgb), 0.8), var(--color-progress)) !important;
+  border-radius: 6px !important;
+}

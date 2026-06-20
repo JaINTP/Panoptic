@@ -145,6 +145,18 @@
       --pomodoro-ring-color: var(--pomodoro-long-break-ring-color, #2563eb);
       --pomodoro-dot-filled-color: var(--pomodoro-long-break-dot-color, #2563eb);
     }
+    /* Thematic Filtering default animations */
+    @keyframes thematic-flash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    body.effect-flash {
+      animation: thematic-flash 0.5s ease infinite-alternate;
+    }
+    body.effect-color-shift {
+      filter: hue-rotate(90deg);
+      transition: filter 0.8s ease;
+    }
   </style>
   <!-- Custom CSS loaded AFTER defaults so theme rules win in the cascade -->
   <link id="overlay-style" rel="stylesheet" href="/overlay/pomodoro/style.css">
@@ -250,6 +262,17 @@
       } catch (_) {}
 
       checkCssVersion();
+
+      try {
+        const eRes = await fetch('/overlay/effects');
+        if (eRes.ok) {
+          const activeEffects = await eRes.json();
+          document.body.className = document.body.className.split(' ').filter(c => !c.startsWith('effect-')).join(' ');
+          activeEffects.forEach(effect => {
+            document.body.classList.add(`effect-${effect}`);
+          });
+        }
+      } catch (_) {}
     }
 
     // Initial render with defaults so something shows immediately

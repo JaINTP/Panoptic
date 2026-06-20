@@ -90,3 +90,22 @@ pub async fn get_overlay_version(State(state): State<AppState>) -> impl IntoResp
     let version = *state.css_version_rx.borrow();
     axum::Json(serde_json::json!({ "version": version }))
 }
+
+pub async fn get_active_effects(State(state): State<AppState>) -> impl IntoResponse {
+    use tauri::Manager;
+    let mut active_list = Vec::new();
+    if let Some(ref app) = state.app_handle {
+        if let Some(effects) = app.try_state::<panoptic_core::ThematicEffects>() {
+            let mut active = effects.active.lock().unwrap();
+            let now = std::time::Instant::now();
+
+            // Clean up expired effects
+            active.retain(|_, &mut expire_time| expire_time > now);
+
+            for name in active.keys() {
+                active_list.push(name.clone());
+            }
+        }
+    }
+    axum::Json(active_list)
+}

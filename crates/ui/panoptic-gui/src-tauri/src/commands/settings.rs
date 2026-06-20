@@ -65,3 +65,43 @@ pub fn get_storage_paths(app: tauri::AppHandle) -> serde_json::Value {
         "artwork_dir": artwork_dir,
     })
 }
+
+#[tauri::command]
+pub fn open_directory(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    use std::path::Path;
+    let path_buf = Path::new(&path);
+    if !path_buf.exists() {
+        if let Err(e) = std::fs::create_dir_all(path_buf) {
+            return Err(format!("Failed to create directory: {}", e));
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // Try calling the freedesktop FileManager1 D-Bus interface using dbus-send.
+        // This opens the directory in the registered graphical file manager directly,
+        // avoiding incorrect MIME associations (like opening a console) and QDBusErrors
+        // associated with direct process spawning of Dolphin.
+        let uri = format!("file://{}", path_buf.to_string_lossy());
+        if std::process::Command::new("dbus-send")
+            .args([
+                "--session",
+                "--dest=org.freedesktop.FileManager1",
+                "/org/freedesktop/FileManager1",
+                "org.freedesktop.FileManager1.ShowFolders",
+                &format!("array:string:{}", uri),
+                "string:",
+            ])
+            .spawn()
+            .is_ok()
+        {
+            return Ok(());
+        }
+    }
+
+    // Fallback to tauri-plugin-opener (which calls ShellExecute on Windows, open on macOS, xdg-open on Linux)
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_path(path, None::<&str>)
+        .map_err(|e| e.to_string())
+}

@@ -14,6 +14,18 @@
       right: 20px;
       pointer-events: none;
     }
+    /* Thematic Filtering default animations */
+    @keyframes thematic-flash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    body.effect-flash {
+      animation: thematic-flash 0.5s ease infinite-alternate;
+    }
+    body.effect-color-shift {
+      filter: hue-rotate(90deg);
+      transition: filter 0.8s ease;
+    }
   </style>
 </head>
 <body>
@@ -87,6 +99,15 @@
             link.href = `/overlay/twitch_notifications/style.css?v=${vData.version}`;
             currentCssVersion = vData.version;
           }
+        }
+
+        const eRes = await fetch('/overlay/effects');
+        if (eRes.ok) {
+          const activeEffects = await eRes.json();
+          document.body.className = document.body.className.split(' ').filter(c => !c.startsWith('effect-')).join(' ');
+          activeEffects.forEach(effect => {
+            document.body.classList.add(`effect-${effect}`);
+          });
         }
       } catch(e) {}
     }

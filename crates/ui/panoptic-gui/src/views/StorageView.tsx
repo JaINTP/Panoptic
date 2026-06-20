@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { openPath } from '@tauri-apps/plugin-opener';
 import { SettingsField, PluginDef } from '../components/SettingsField';
 
 interface StorageViewProps {
@@ -34,7 +33,7 @@ export const StorageView: React.FC<StorageViewProps> = ({
   const handleBrowse = async (path: string) => {
     if (!path) return;
     try {
-      await openPath(path);
+      await invoke('open_directory', { path });
     } catch (e) {
       console.error('Failed to open path:', path, e);
     }

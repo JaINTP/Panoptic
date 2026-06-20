@@ -81,18 +81,98 @@ interface StreamGoalsPreviewProps {
   stats: SessionStats;
 }
 
-const MilestoneKeyframes = `
-@keyframes sg-milestone-flash-preview {
-  0%   { box-shadow: 0 0 0 rgba(var(--sg-accent-rgb-p, 157 78 221), 0); }
-  25%  { box-shadow: 0 0 20px 6px rgba(var(--sg-accent-rgb-p, 157 78 221), 0.8); }
-  50%  { box-shadow: 0 0 8px 2px rgba(var(--sg-accent-rgb-p, 157 78 221), 0.3); }
-  75%  { box-shadow: 0 0 20px 6px rgba(var(--sg-accent-rgb-p, 157 78 221), 0.7); }
-  100% { box-shadow: 0 0 14px 3px rgba(var(--sg-accent-rgb-p, 157 78 221), 0.4); }
-}
-@keyframes sg-fill-glow-preview {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.72; }
-}
+export const STREAM_GOALS_DEFAULT_CSS = `
+  .stream-goals-preview-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 300px;
+    max-width: 380px;
+  }
+  .goal-card {
+    background: var(--sg-bg, rgba(10, 8, 18, 0.88));
+    border: 1px solid var(--sg-border, rgba(157, 78, 221, 0.35));
+    border-radius: var(--sg-radius, 10px);
+    padding: 12px 14px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow:
+      0 0 20px rgba(var(--sg-accent-rgb, 157, 78, 221), 0.12),
+      0 4px 20px rgba(0, 0, 0, 0.6);
+    transition: transform 0.3s ease;
+  }
+  .goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .goal-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-text, var(--text-main, #e8e6f5));
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .goal-numbers {
+    font-size: 11px;
+    color: var(--sg-text-sub, var(--text-secondary, #a89ebd));
+    white-space: nowrap;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+  .goal-track {
+    width: 100%;
+    height: var(--sg-bar-height, 10px);
+    background: var(--sg-track-bg, rgba(255,255,255,0.08));
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .goal-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    min-width: 4px;
+  }
+  .goal-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+    border-radius: 999px;
+  }
+  .goal-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 5px;
+  }
+  .goal-pct {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sg-text-sub, var(--text-secondary, #a89ebd));
+  }
+  /* Milestone celebration: flash + glow at 100% */
+  @keyframes sg-milestone-flash {
+    0%   { box-shadow: 0 0 0 rgba(var(--sg-accent-rgb, 157, 78, 221), 0); }
+    25%  { box-shadow: 0 0 30px 8px rgba(var(--sg-accent-rgb, 157, 78, 221), 0.8); }
+    50%  { box-shadow: 0 0 10px 2px rgba(var(--sg-accent-rgb, 157, 78, 221), 0.3); }
+    75%  { box-shadow: 0 0 30px 8px rgba(var(--sg-accent-rgb, 157, 78, 221), 0.7); }
+    100% { box-shadow: 0 0 20px 4px rgba(var(--sg-accent-rgb, 157, 78, 221), 0.4); }
+  }
+  @keyframes sg-fill-glow {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.75; }
+  }
+  .goal-card.milestone {
+    animation: sg-milestone-flash 1.6s ease-in-out infinite;
+  }
+  .goal-card.milestone .goal-fill {
+    animation: sg-fill-glow 1.2s ease-in-out infinite;
+  }
 `;
 
 export const StreamGoalsPreview: React.FC<StreamGoalsPreviewProps> = ({
@@ -105,28 +185,9 @@ export const StreamGoalsPreview: React.FC<StreamGoalsPreviewProps> = ({
 
   return (
     <div className="panoptic-overlay-wrapper stream-goals-preview">
-      <style>{MilestoneKeyframes}</style>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          minWidth: '300px',
-          maxWidth: '380px',
-        }}
-      >
+      <div className="stream-goals-preview-container">
         {enabled.length === 0 ? (
-          <div
-            style={{
-              background: 'rgba(10,8,18,0.88)',
-              border: '1px solid rgba(157,78,221,0.3)',
-              borderRadius: '10px',
-              padding: '16px',
-              color: 'var(--text-secondary)',
-              fontSize: '13px',
-              textAlign: 'center',
-            }}
-          >
+          <div className="goal-card" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
             No goals configured yet.
             <br />
             Add goals in the settings panel below.
@@ -163,8 +224,8 @@ export const StreamGoalsPreview: React.FC<StreamGoalsPreviewProps> = ({
             // Convert hex color to rgb for milestone glow
             const hexMatch = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
             const rgbStr = hexMatch
-              ? `${parseInt(hexMatch[1], 16)} ${parseInt(hexMatch[2], 16)} ${parseInt(hexMatch[3], 16)}`
-              : '157 78 221';
+              ? `${parseInt(hexMatch[1], 16)}, ${parseInt(hexMatch[2], 16)}, ${parseInt(hexMatch[3], 16)}`
+              : '157, 78, 221';
 
             // Template label
             let labelText = goal.label || goal.variable;
@@ -190,98 +251,39 @@ export const StreamGoalsPreview: React.FC<StreamGoalsPreviewProps> = ({
             return (
               <div
                 key={goal.id}
+                className={`goal-card${isMilestone ? ' milestone' : ''}`}
                 style={
-                  {
-                    background: 'rgba(10,8,18,0.88)',
-                    border: `1px solid rgba(157,78,221,${isMilestone ? '0.7' : '0.3'})`,
-                    borderRadius: '10px',
-                    padding: '12px 14px',
-                    backdropFilter: 'blur(10px)',
-                    animation: isMilestone
-                      ? 'sg-milestone-flash-preview 1.6s ease-in-out infinite'
-                      : 'none',
-                    '--sg-accent-rgb-p': rgbStr,
-                  } as React.CSSProperties
+                  isMilestone
+                    ? ({ '--sg-accent-rgb': rgbStr } as React.CSSProperties)
+                    : undefined
                 }
               >
                 {/* Header row */}
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'baseline',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: 'var(--text-main)',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {labelText}
-                  </span>
+                <div className="goal-header">
+                  <span className="goal-label">{labelText}</span>
                   {goal.show_numbers !== false && (
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        color: 'var(--text-secondary)',
-                        marginLeft: '8px',
-                        flexShrink: 0,
-                      }}
-                    >
+                    <span className="goal-numbers">
                       {current.toLocaleString()} / {currentTarget.toLocaleString()}
                     </span>
                   )}
                 </div>
 
                 {/* Progress track */}
-                <div
-                  style={{
-                    width: '100%',
-                    height: '10px',
-                    background: 'rgba(255,255,255,0.08)',
-                    borderRadius: '999px',
-                    overflow: 'hidden',
-                  }}
-                >
+                <div className="goal-track">
                   <div
+                    className="goal-fill"
                     style={{
-                      height: '100%',
                       width: `${pct}%`,
                       minWidth: pct > 0 ? '4px' : '0',
                       background: color,
-                      borderRadius: '999px',
-                      transition: 'width 0.6s cubic-bezier(0.25,0.46,0.45,0.94)',
-                      animation: isMilestone
-                        ? 'sg-fill-glow-preview 1.2s ease-in-out infinite'
-                        : 'none',
                     }}
                   />
                 </div>
 
                 {/* Footer: percentage */}
                 {goal.show_percentage !== false && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      marginTop: '5px',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      {pct}%
-                    </span>
+                  <div className="goal-footer">
+                    <span className="goal-pct">{pct}%</span>
                   </div>
                 )}
               </div>

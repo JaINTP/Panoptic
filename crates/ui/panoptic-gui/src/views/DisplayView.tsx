@@ -20,6 +20,7 @@ import {
   CustomVar,
   SessionStats,
   DEFAULT_SESSION_STATS,
+  STREAM_GOALS_DEFAULT_CSS,
 } from '../components/StreamGoalsPreview';
 import { StreamGoalsConfig } from '../components/StreamGoalsConfig';
 
@@ -486,31 +487,78 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
 
   return (
     <div className="view-pane" style={{ flexDirection: 'column', gap: '20px', height: '100%', padding: 0 }}>
-      {/* Overlay Tabs */}
-      <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border)', paddingBottom: '0' }}>
-        {overlayTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveOverlay(tab.id)}
+      {/* Overlay Tabs & Aesthetic Pack Selector */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '0' }}>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {overlayTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveOverlay(tab.id)}
+              style={{
+                background: activeOverlay === tab.id ? 'var(--bg-card)' : 'transparent',
+                color: activeOverlay === tab.id ? 'var(--text-main)' : 'var(--text-secondary)',
+                border: '1px solid ' + (activeOverlay === tab.id ? 'var(--border)' : 'transparent'),
+                borderBottom: activeOverlay === tab.id ? '2px solid var(--accent-primary)' : '1px solid transparent',
+                borderRadius: '6px 6px 0 0',
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                marginBottom: '-1px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: 'none'
+              }}
+            >
+              {tab.name}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '8px', paddingBottom: '6px' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Aesthetic Pack:</span>
+          <select
+            onChange={async (e) => {
+              const packId = e.target.value;
+              if (packId) {
+                try {
+                  await invoke('apply_aesthetic_pack', { packId });
+                } catch (err) {
+                  console.error('Failed to apply aesthetic pack:', err);
+                  alert(`Failed to apply pack: ${err}`);
+                }
+              }
+            }}
+            defaultValue=""
             style={{
-              background: activeOverlay === tab.id ? 'var(--bg-card)' : 'transparent',
-              color: activeOverlay === tab.id ? 'var(--text-main)' : 'var(--text-secondary)',
-              border: '1px solid ' + (activeOverlay === tab.id ? 'var(--border)' : 'transparent'),
-              borderBottom: activeOverlay === tab.id ? '2px solid var(--accent-primary)' : '1px solid transparent',
-              borderRadius: '6px 6px 0 0',
-              padding: '8px 16px',
-              fontSize: '13px',
+              background: 'var(--bg-card)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border)',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '12.5px',
               fontWeight: 600,
-              marginBottom: '-1px',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: 'none'
+              outline: 'none',
+              transition: 'border-color 0.2s, box-shadow 0.2s',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = 'var(--border-focus)';
+              e.target.style.boxShadow = '0 0 0 2px var(--accent-primary-glow)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'var(--border)';
+              e.target.style.boxShadow = 'var(--shadow-sm)';
             }}
           >
-            {tab.name}
-          </button>
-        ))}
+            <option value="" disabled>Select a pack...</option>
+            <option value="cyber">Cyberpunk Neon</option>
+            <option value="eldritch">Eldritch Tomes</option>
+            <option value="rpg90s">RPG Retro 90s</option>
+            <option value="salem">Salem Witch Cauldron</option>
+          </select>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: '24px' }}>
@@ -533,7 +581,7 @@ export const DisplayView: React.FC<DisplayViewProps> = ({
               position: 'relative'
             }}>
               {/* Live CSS Injection for Preview - defaults first, custom rules win */}
-              <style>{activeOverlay === 'pomodoro' ? POMODORO_DEFAULT_CSS : ''}{overlaysCss[activeOverlay] || ''}</style>
+              <style>{activeOverlay === 'pomodoro' ? POMODORO_DEFAULT_CSS : ''}{activeOverlay === 'stream_goals' ? STREAM_GOALS_DEFAULT_CSS : ''}{overlaysCss[activeOverlay] || ''}</style>
               {renderPreview()}
             </div>
           </div>

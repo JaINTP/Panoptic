@@ -21,3 +21,16 @@ pub struct AppState {
     #[cfg(feature = "plugin")]
     pub app_handle: Option<tauri::AppHandle>,
 }
+
+#[derive(Debug)]
+pub struct ThematicEffects {
+    pub active: std::sync::Mutex<std::collections::HashMap<String, std::time::Instant>>,
+}
+
+impl Default for ThematicEffects {
+    fn default() -> Self {
+        Self {
+            active: std::sync::Mutex::new(std::collections::HashMap::new()),
+        }
+    }
+}

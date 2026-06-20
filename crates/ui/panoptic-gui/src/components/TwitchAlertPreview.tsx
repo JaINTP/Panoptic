@@ -31,24 +31,25 @@ export const TwitchAlertPreview: React.FC<TwitchAlertPreviewProps> = ({ state, s
       case 'Follow':
         return settings.follow_text?.replace('{user}', (data as any).user_name) || `${(data as any).user_name} just followed!`;
       case 'Subscription':
-        return settings.sub_text?.replace('{user}', (data as any).user_name) || `${(data as any).user_name} just subscribed!`;
+        return settings.sub_text?.replace('{user}', (data as any).user_name).replace('{tier}', (data as any).tier).replace('{months}', String((data as any).cumulative_months)) || `${(data as any).user_name} subscribed at Tier ${(data as any).tier} for ${(data as any).cumulative_months} months!`;
+      case 'GiftSubscription':
+        return settings.giftsub_text?.replace('{user}', (data as any).user_name).replace('{total}', String((data as any).total)).replace('{tier}', (data as any).tier) || `${(data as any).user_name} gifted ${(data as any).total} Tier ${(data as any).tier} subscriptions!`;
       case 'Raid':
-        return settings.raid_text?.replace('{user}', (data as any).from_broadcaster_name).replace('{viewers}', (data as any).viewers) || `${(data as any).from_broadcaster_name} raided with ${(data as any).viewers}!`;
+        return settings.raid_text?.replace('{user}', (data as any).from_broadcaster_name).replace('{viewers}', String((data as any).viewers)) || `${(data as any).from_broadcaster_name} raided with ${(data as any).viewers} viewers!`;
       case 'Cheer':
-        return settings.cheer_text?.replace('{user}', (data as any).user_name).replace('{bits}', (data as any).bits) || `${(data as any).user_name} cheered ${(data as any).bits}!`;
+        return settings.cheer_text?.replace('{user}', (data as any).user_name).replace('{bits}', String((data as any).bits)).replace('{message}', (data as any).message) || `${(data as any).user_name} cheered ${(data as any).bits} bits: ${(data as any).message}`;
       default:
         return "New Event!";
     }
   };
 
   const getIcon = (type: string) => {
-    switch (type) {
-      case 'Follow': return '✨';
-      case 'Subscription': return '💖';
-      case 'Raid': return '⚔️';
-      case 'Cheer': return '💎';
-      default: return '🔔';
-    }
+    if (type === 'Follow') return settings.follow_icon || '✨';
+    if (type === 'Subscription') return settings.sub_icon || '💖';
+    if (type === 'GiftSubscription') return settings.giftsub_icon || '🎁';
+    if (type === 'Raid') return settings.raid_icon || '⚔️';
+    if (type === 'Cheer') return settings.cheer_icon || '💎';
+    return '🔔';
   };
 
   return (

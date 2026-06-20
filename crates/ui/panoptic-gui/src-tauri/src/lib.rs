@@ -18,13 +18,15 @@ pub mod logging;
 pub mod tray;
 pub mod update;
 
-use crate::commands::overlay::{get_overlay_css, get_overlay_version, set_overlay_css};
+use crate::commands::overlay::{
+    apply_aesthetic_pack, get_overlay_css, get_overlay_version, set_overlay_css,
+};
 use crate::commands::plugins::{
     get_plugin_settings, get_plugins_metadata, set_plugin_settings, trigger_plugin_action,
 };
 use crate::commands::settings::{
     get_app_version, get_not_playing_settings, get_output_template, get_storage_paths,
-    set_not_playing_settings, set_output_template,
+    open_directory, set_not_playing_settings, set_output_template,
 };
 use crate::commands::stream_goals::{
     get_session_stats, get_stream_goals_config, reset_stream_goals_session, save_custom_vars,
@@ -111,11 +113,13 @@ pub fn run() {
             get_overlay_css,
             set_overlay_css,
             get_overlay_version,
+            apply_aesthetic_pack,
             get_not_playing_settings,
             set_not_playing_settings,
             get_update_status,
             get_app_version,
             get_storage_paths,
+            open_directory,
             // Stream Goals commands
             get_session_stats,
             reset_stream_goals_session,
@@ -135,6 +139,7 @@ pub fn run() {
             app.manage(update_status_for_app.clone());
             app.manage(css_version_tx);
             app.manage(plugins);
+            app.manage(panoptic_core::ThematicEffects::default());
             // Expose TwitchEventManager for stream-goals Tauri commands
             twitch_manager_for_app.load_session_stats(app.handle());
             app.manage(twitch_manager_for_app);
