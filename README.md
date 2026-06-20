@@ -169,6 +169,10 @@ Settings and Stylesheets are stored in:
 
 Stylesheets are physically stored as `{plugin_id}.css` in the `overlays/` subdirectory, allowing you to back them up or share them easily.
 
+## Known Issues
+
+- **Now-Playing Web Overlay Progress Interpolation**: The interpolation of the now-playing overlay progress may experience minor issues with progress bar/timer oscillation under certain media providers.
+
 ## License
 
 MIT - See [LICENSE](LICENSE) for details.
