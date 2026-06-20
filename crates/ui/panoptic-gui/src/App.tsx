@@ -147,14 +147,15 @@ function App() {
       const prev = prevPlaybackRef.current;
 
       const isTrackChanged = !prev || prev.title !== next.title || prev.artist !== next.artist;
-      // Only snap the interpolation base on track change or resume from pause.
-      // SMTC position is not updated continuously — it only changes when the media
-      // app explicitly reports a new position. Resetting on every poll (or on any
-      // deviation from expected) causes the display to snap backward on every cycle,
-      // which is the oscillation the user sees. While playing we trust our own clock.
       const wasNotPlaying = !prev || !prev.is_playing;
 
-      if (isTrackChanged || wasNotPlaying) {
+      // Detect a seek: server position deviates > 3 s from where interpolation expects
+      const elapsed = now - baseTimeRef.current;
+      const expectedProgress = baseProgressRef.current + (prev?.is_playing ? elapsed : 0);
+      const isSeeked = !isTrackChanged && Math.abs(next.progress_ms - expectedProgress) > 3000;
+
+      if (isTrackChanged || wasNotPlaying || isSeeked) {
+        // Snap interpolation base to server value
         baseProgressRef.current = next.progress_ms;
         baseTimeRef.current = now;
         setDisplayProgressMs(next.progress_ms);
