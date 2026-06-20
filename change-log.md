@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-06-21
+
 ### Added
 
 - **HTTP API Endpoints for Stream Goal Variables:** Added POST endpoints to increment, decrement, and set custom stream goal variables on the local Axum server. This allows external tools (such as OBS or Streamer.bot) to dynamically alter variables, which immediately persists settings, triggers real-time front-end updates, and returns the updated values as JSON.
