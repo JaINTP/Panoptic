@@ -150,7 +150,7 @@ pub struct SessionStats {
     pub subscribers: u64,
     pub bits: u64,
     pub raids: u64,
-    /// Hosts are deprecated on Twitch (removed 2022) — always 0.
+    /// Hosts are deprecated on Twitch (removed 2022) - always 0.
     pub hosts: u64,
     /// Total gifted subs (sum of gift counts, not event count).
     pub gift_subs: u64,
@@ -163,7 +163,7 @@ pub struct SessionStats {
     /// Number of distinct Cheer events (not total bits).
     pub cheers_count: u64,
     pub redemptions: u64,
-    /// Current viewer count — polled periodically from Helix /streams.
+    /// Current viewer count - polled periodically from Helix /streams.
     pub viewer_count: u64,
     pub stream_title: String,
     pub category: String,

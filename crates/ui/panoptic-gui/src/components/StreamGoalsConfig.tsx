@@ -223,7 +223,7 @@ export const StreamGoalsConfig: React.FC<StreamGoalsConfigProps> = ({
                     {v.icon} {v.label}
                   </div>
                   <div style={{ fontWeight: 700, color: 'var(--accent-primary)', fontSize: '14px' }}>
-                    {typeof val === 'number' ? val.toLocaleString() : val || '—'}
+                    {typeof val === 'number' ? val.toLocaleString() : val || '-'}
                   </div>
                 </div>
               );
@@ -273,7 +273,7 @@ export const StreamGoalsConfig: React.FC<StreamGoalsConfigProps> = ({
 
         {goals.length === 0 && (
           <div style={{ color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic' }}>
-            No goals yet — use the quick-add buttons above or add a custom goal.
+            No goals yet - use the quick-add buttons above or add a custom goal.
           </div>
         )}
 

@@ -4,10 +4,10 @@ This document outlines the planned evolution of the Panoptic toolkit. Our focus 
 
 ## 🔌 Planned Plugins
 
-### 💬 Twitch Chat Overlay — Thematic Filtering
+### 💬 Twitch Chat Overlay - Thematic Filtering
 Extend the live chat overlay with cross-plugin visual reactivity.
 - **Status:** Planning
-- **Key Feature:** Thematic Filtering—chat messages trigger visual effects across other overlays (e.g. a keyword flashes the hype train, a sub triggers a global colour shift).
+- **Key Feature:** Thematic Filtering - chat messages trigger visual effects across other overlays (e.g. a keyword flashes the hype train, a sub triggers a global colour shift).
 - **Shipped in v0.1.9:** Core chat overlay with badge/emote image resolution, pronoun display, and configurable frame and animation styles.
 
 ### ~~🏆 Universal Stream Goals~~
@@ -34,12 +34,12 @@ Automatically update "Now Playing" with the metadata and box art of games runnin
 ### ⚡ Interactive "Bit-Triggers"
 Enable viewers to manipulate overlay visuals directly using Twitch Bits.
 - **Status:** Concept
-- **Key Feature:** "Chaos Mode"—large cheers can trigger temporary global glitch or glow effects.
+- **Key Feature:** "Chaos Mode" - large cheers can trigger temporary global glitch or glow effects.
 
 ### ~~⏲️ Pomodoro / BRB Timer~~
 ~~Themed countdown timers for focus sessions or break screens.~~
 - ~~**Status:** Planning~~
-- ~~**Key Feature:** Automation hooks—pause music or trigger alerts when the timer expires.~~
+- ~~**Key Feature:** Automation hooks - pause music or trigger alerts when the timer expires.~~
 - **Shipped in v0.2.0:** Work/break cycle timer with configurable durations, session dots, circular progress ring overlay, phase-complete automation event (`pomodoro_phase_complete`), and full CSS variable theming.
 
 ## 🛠️ Core Engine Improvements

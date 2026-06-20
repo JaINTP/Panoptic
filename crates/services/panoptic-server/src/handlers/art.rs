@@ -26,8 +26,8 @@ pub async fn get_art(State(state): State<AppState>, Query(params): Query<ArtQuer
     }
 
     if let Some(path) = source.strip_prefix("file:///") {
-        // On Windows the path after file:/// is like C:/... — use as-is.
-        // On Linux it would be /absolute/path — prepend the slash back.
+        // On Windows the path after file:/// is like C:/... - use as-is.
+        // On Linux it would be /absolute/path - prepend the slash back.
         #[cfg(target_os = "windows")]
         let fs_path = std::path::PathBuf::from(path);
         #[cfg(not(target_os = "windows"))]

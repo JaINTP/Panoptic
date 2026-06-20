@@ -1,4 +1,4 @@
-//! StreamGoals plugin — universal progress-bar overlay driven by live Twitch EventSub data.
+//! StreamGoals plugin - universal progress-bar overlay driven by live Twitch EventSub data.
 //!
 //! # Data Flow
 //! 1. `TwitchEventManager::session_stats` is updated by every incoming EventSub event
@@ -72,7 +72,7 @@ fn default_true() -> bool {
 pub struct CustomVar {
     /// Variable name (e.g. `"deaths"`).
     pub name: String,
-    /// Current value — persisted in plugin settings.
+    /// Current value - persisted in plugin settings.
     pub value: f64,
     /// Amount to add/subtract on each increment/decrement.
     #[serde(default = "default_step")]

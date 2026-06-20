@@ -134,6 +134,7 @@ The overlays pull their CSS directly from your Panoptic configuration.
 
 ### 📖 Project Documentation
 For detailed technical documentation on how to fully customize or extend Panoptic, visit the following guides:
+- [**API Endpoints Reference**](docs/API-Endpoints.md) - Detailed guide to all core, overlay, state, and mutator HTTP endpoints.
 - [**Theming Overview**](docs/Theming-Overview.md) - How the CSS engine and side-by-side editor work.
 - [**Now Playing CSS Guide**](docs/Now-Playing-CSS.md) - Variables for layout, typography, and progress.
 - [**Hype Train CSS Guide**](docs/Hype-Train-CSS.md) - Variables for progress tiers and leaderboards.
