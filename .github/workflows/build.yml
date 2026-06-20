@@ -1,21 +1,12 @@
-name: Release
+name: Build
 
 on:
   push:
-    tags:
-      - "v*"
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Release tag (e.g. v0.1.0)"
-        required: true
-
-permissions:
-  contents: write
+    branches:
+      - main
 
 env:
   CARGO_TERM_COLOR: always
-  # Pin Node and Rust versions for reproducibility
   NODE_VERSION: "22"
   RUST_VERSION: "stable"
 
@@ -104,9 +95,24 @@ jobs:
           projectPath: crates/ui/panoptic-gui
           tauriScript: npx tauri
           args: --target ${{ matrix.target }}
-          tagName: ${{ github.ref_name || github.event.inputs.tag }}
-          releaseName: "Panoptic ${{ github.ref_name || github.event.inputs.tag }}"
-          releaseBody: |
-            See the [changelog](https://github.com/${{ github.repository }}/blob/main/change-log.md) for details.
-          releaseDraft: true
-          prerelease: false
+
+      # ── Upload Artifacts (platform-specific) ─────────────────────────
+      - name: Upload Linux Artifacts
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v6
+        with:
+          name: panoptic-bundles-${{ matrix.label }}
+          path: |
+            crates/ui/panoptic-gui/src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
+            crates/ui/panoptic-gui/src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+          retention-days: 14
+
+      - name: Upload Windows Artifacts
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v6
+        with:
+          name: panoptic-bundles-${{ matrix.label }}
+          path: |
+            crates/ui/panoptic-gui/src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
+            crates/ui/panoptic-gui/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+          retention-days: 14
