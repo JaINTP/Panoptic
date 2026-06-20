@@ -11,10 +11,7 @@ pub struct ArtQuery {
     v: Option<String>,
 }
 
-pub async fn get_art(
-    State(state): State<AppState>,
-    Query(params): Query<ArtQuery>,
-) -> Response {
+pub async fn get_art(State(state): State<AppState>, Query(params): Query<ArtQuery>) -> Response {
     // Use query param if provided, otherwise fall back to current state.
     let source = match params.v {
         Some(ref v) if !v.is_empty() => v.clone(),
@@ -41,12 +38,7 @@ pub async fn get_art(
                 let mime = mime_guess::from_path(&fs_path)
                     .first_or_octet_stream()
                     .to_string();
-                (
-                    StatusCode::OK,
-                    [(header::CONTENT_TYPE, mime)],
-                    bytes,
-                )
-                    .into_response()
+                (StatusCode::OK, [(header::CONTENT_TYPE, mime)], bytes).into_response()
             }
             Err(_) => StatusCode::NOT_FOUND.into_response(),
         }

@@ -38,6 +38,7 @@ mod tests {
             state_rx,
             css_version_rx,
             settings_path: None,
+            app_handle: None,
         };
 
         let response = get_current_track(State(state)).await.into_response();
@@ -75,6 +76,7 @@ mod tests {
             state_rx,
             css_version_rx,
             settings_path: None,
+            app_handle: None,
         };
 
         let response = get_playback(State(state)).await.into_response();

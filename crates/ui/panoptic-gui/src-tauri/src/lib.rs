@@ -45,9 +45,8 @@ pub fn run() {
     let (css_version_tx, css_version_rx) = watch::channel(1u32);
     let update_status = UpdateStatus(Arc::new(std::sync::Mutex::new(None)));
 
-    let twitch_manager = Arc::new(
-        crate::engine::plugins::twitch_notifications::TwitchEventManager::new(),
-    );
+    let twitch_manager =
+        Arc::new(crate::engine::plugins::twitch_notifications::TwitchEventManager::new());
     let registry = crate::engine::plugin_registry::PluginRegistry::new()
         .register(Box::new(
             crate::engine::plugins::spotify::SpotifyPlugin::new(),
@@ -55,9 +54,7 @@ pub fn run() {
         .register(Box::new(
             crate::engine::plugins::mpris_smtc::NativeMediaPlugin::new(),
         ))
-        .register(Box::new(
-            crate::engine::plugins::twitch::TwitchPlugin::new(),
-        ))
+        .register(Box::new(crate::engine::plugins::twitch::TwitchPlugin::new()))
         .register(Box::new(
             crate::engine::plugins::twitch_notifications::TwitchHypeTrainPlugin::new(
                 twitch_manager.clone(),
@@ -139,6 +136,7 @@ pub fn run() {
             app.manage(css_version_tx);
             app.manage(plugins);
             // Expose TwitchEventManager for stream-goals Tauri commands
+            twitch_manager_for_app.load_session_stats(app.handle());
             app.manage(twitch_manager_for_app);
 
             let orchestrator_handle = app.handle().clone();

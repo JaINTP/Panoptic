@@ -23,6 +23,7 @@ pub fn reset_stream_goals_session(
     let mut stats = manager.session_stats.lock().unwrap();
     *stats = SessionStats::default();
     let _ = app.emit("session_stats_update", stats.clone());
+    manager.save_session_stats(&app);
     Ok(())
 }
 
@@ -40,17 +41,13 @@ pub fn get_stream_goals_config(app: tauri::AppHandle) -> Result<StreamGoalsSetti
 
 /// Persist the full goals configuration (array of GoalConfig).
 #[tauri::command]
-pub fn save_goals_config(
-    app: tauri::AppHandle,
-    goals: Vec<GoalConfig>,
-) -> Result<(), String> {
+pub fn save_goals_config(app: tauri::AppHandle, goals: Vec<GoalConfig>) -> Result<(), String> {
     let mut settings = AppSettings::load(&app);
     let raw = settings
         .plugins
         .entry("stream_goals".into())
         .or_insert_with(|| serde_json::json!({}));
-    let mut sg: StreamGoalsSettings =
-        serde_json::from_value(raw.clone()).unwrap_or_default();
+    let mut sg: StreamGoalsSettings = serde_json::from_value(raw.clone()).unwrap_or_default();
     sg.goals = goals;
     *raw = serde_json::to_value(&sg).map_err(|e| e.to_string())?;
     settings.save(&app)
@@ -58,18 +55,14 @@ pub fn save_goals_config(
 
 /// Persist the custom variable definitions (and their current values).
 #[tauri::command]
-pub fn save_custom_vars(
-    app: tauri::AppHandle,
-    custom_vars: Vec<CustomVar>,
-) -> Result<(), String> {
+pub fn save_custom_vars(app: tauri::AppHandle, custom_vars: Vec<CustomVar>) -> Result<(), String> {
     use tauri::Emitter;
     let mut settings = AppSettings::load(&app);
     let raw = settings
         .plugins
         .entry("stream_goals".into())
         .or_insert_with(|| serde_json::json!({}));
-    let mut sg: StreamGoalsSettings =
-        serde_json::from_value(raw.clone()).unwrap_or_default();
+    let mut sg: StreamGoalsSettings = serde_json::from_value(raw.clone()).unwrap_or_default();
     sg.custom_vars = custom_vars.clone();
     *raw = serde_json::to_value(&sg).map_err(|e| e.to_string())?;
     settings.save(&app)?;
@@ -80,19 +73,14 @@ pub fn save_custom_vars(
 /// Increment, decrement, or reset a named custom variable by its step value.
 /// `op` must be one of `"increment"`, `"decrement"`, or `"reset"`.
 #[tauri::command]
-pub fn update_custom_var(
-    app: tauri::AppHandle,
-    name: String,
-    op: String,
-) -> Result<f64, String> {
+pub fn update_custom_var(app: tauri::AppHandle, name: String, op: String) -> Result<f64, String> {
     use tauri::Emitter;
     let mut settings = AppSettings::load(&app);
     let raw = settings
         .plugins
         .entry("stream_goals".into())
         .or_insert_with(|| serde_json::json!({}));
-    let mut sg: StreamGoalsSettings =
-        serde_json::from_value(raw.clone()).unwrap_or_default();
+    let mut sg: StreamGoalsSettings = serde_json::from_value(raw.clone()).unwrap_or_default();
 
     let cv = sg
         .custom_vars

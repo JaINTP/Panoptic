@@ -12,8 +12,7 @@ pub fn build_tray(
     let app_handle = app.handle().clone();
 
     let quit_i = MenuItem::with_id(&app_handle, "quit", "Quit", true, None::<&str>)?;
-    let settings_i =
-        MenuItem::with_id(&app_handle, "settings", "Settings", true, None::<&str>)?;
+    let settings_i = MenuItem::with_id(&app_handle, "settings", "Settings", true, None::<&str>)?;
     let menu = Menu::with_items(&app_handle, &[&settings_i, &quit_i])?;
 
     let menu_for_update = menu.clone();

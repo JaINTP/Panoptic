@@ -12,6 +12,7 @@ export interface GoalConfig {
   show_numbers: boolean;
   milestone_celebration: boolean;
   enabled: boolean;
+  steps?: number[];
 }
 
 export interface CustomVar {
@@ -133,8 +134,29 @@ export const StreamGoalsPreview: React.FC<StreamGoalsPreviewProps> = ({
         ) : (
           enabled.map((goal) => {
             const current = variables[goal.variable] ?? 0;
-            const target = goal.target || 1;
-            const pct = Math.min(100, Math.round((current / target) * 100));
+            const steps = goal.steps && goal.steps.length > 0 ? goal.steps.map(Number) : null;
+            let currentTarget = goal.target || 1;
+            let currentStart = 0;
+            let stepIndex = 0;
+            let isMultistep = false;
+
+            if (steps) {
+              isMultistep = true;
+              while (stepIndex < steps.length && current >= steps[stepIndex]) {
+                stepIndex++;
+              }
+              if (stepIndex < steps.length) {
+                currentTarget = steps[stepIndex];
+                currentStart = stepIndex > 0 ? steps[stepIndex - 1] : 0;
+              } else {
+                currentTarget = steps[steps.length - 1];
+                currentStart = steps.length > 1 ? steps[steps.length - 2] : 0;
+              }
+            }
+
+            const range = currentTarget - currentStart;
+            const currentProgressInStep = isMultistep ? Math.max(0, current - currentStart) : current;
+            const pct = Math.min(100, Math.round((currentTarget > currentStart && range > 0) ? (currentProgressInStep / range) * 100 : (current / currentTarget) * 100));
             const isMilestone = pct >= 100 && goal.milestone_celebration !== false;
             const color = goal.color || '#9d4edd';
 
@@ -143,6 +165,27 @@ export const StreamGoalsPreview: React.FC<StreamGoalsPreviewProps> = ({
             const rgbStr = hexMatch
               ? `${parseInt(hexMatch[1], 16)} ${parseInt(hexMatch[2], 16)} ${parseInt(hexMatch[3], 16)}`
               : '157 78 221';
+
+            // Template label
+            let labelText = goal.label || goal.variable;
+            const labelMatches = labelText.match(/\{\{([^}]+)\}\}/g);
+            if (labelMatches) {
+              for (const match of labelMatches) {
+                const varName = match.slice(2, -2).trim();
+                if (varName === 'step') {
+                  labelText = labelText.replace(match, String(isMultistep && steps ? Math.min(stepIndex + 1, steps.length) : 1));
+                } else if (varName === 'total_steps') {
+                  labelText = labelText.replace(match, String(isMultistep && steps ? steps.length : 1));
+                } else if (varName === 'target') {
+                  labelText = labelText.replace(match, goal.target.toLocaleString());
+                } else if (varName === 'step_target') {
+                  labelText = labelText.replace(match, currentTarget.toLocaleString());
+                } else {
+                  const val = variables[varName] ?? 0;
+                  labelText = labelText.replace(match, val.toLocaleString());
+                }
+              }
+            }
 
             return (
               <div
@@ -180,7 +223,7 @@ export const StreamGoalsPreview: React.FC<StreamGoalsPreviewProps> = ({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {goal.label || goal.variable}
+                    {labelText}
                   </span>
                   {goal.show_numbers !== false && (
                     <span
@@ -191,7 +234,7 @@ export const StreamGoalsPreview: React.FC<StreamGoalsPreviewProps> = ({
                         flexShrink: 0,
                       }}
                     >
-                      {current.toLocaleString()} / {target.toLocaleString()}
+                      {current.toLocaleString()} / {currentTarget.toLocaleString()}
                     </span>
                   )}
                 </div>

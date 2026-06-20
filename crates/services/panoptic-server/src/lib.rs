@@ -12,12 +12,14 @@ pub async fn start_server(
     css_version_rx: watch::Receiver<u32>,
     settings_path: Option<std::path::PathBuf>,
     plugins: std::sync::Arc<Vec<Box<dyn panoptic_core::PanopticPlugin>>>,
+    app_handle: Option<tauri::AppHandle>,
 ) {
     let state = AppState {
         auth_tx,
         state_rx,
         css_version_rx,
         settings_path,
+        app_handle,
     };
     let app = AppRouter::build(state, plugins);
 
@@ -55,7 +57,10 @@ pub async fn start_server(
             }
         }
         (Err(e4), Err(e6)) => {
-            error!("Failed to bind Axum server on any address: IPv4={} IPv6={}", e4, e6);
+            error!(
+                "Failed to bind Axum server on any address: IPv4={} IPv6={}",
+                e4, e6
+            );
         }
     }
 }

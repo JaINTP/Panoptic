@@ -74,7 +74,7 @@ impl PomodoroState {
             PomodoroPhase::Work => {
                 // Count this session's completion
                 let next_completed = self.completed_sessions + 1;
-                if next_completed % self.sessions_before_long_break == 0 {
+                if next_completed.is_multiple_of(self.sessions_before_long_break) {
                     PomodoroPhase::LongBreak
                 } else {
                     PomodoroPhase::ShortBreak
@@ -107,7 +107,10 @@ impl PomodoroPlugin {
     }
 
     fn apply_saved_settings(state: &mut PomodoroState, plugin_cfg: &serde_json::Value) {
-        if let Some(v) = plugin_cfg.get("work_duration_mins").and_then(|v| v.as_u64()) {
+        if let Some(v) = plugin_cfg
+            .get("work_duration_mins")
+            .and_then(|v| v.as_u64())
+        {
             state.work_duration_mins = v.max(1);
         }
         if let Some(v) = plugin_cfg.get("short_break_mins").and_then(|v| v.as_u64()) {
@@ -236,7 +239,9 @@ impl PanopticPlugin for PomodoroPlugin {
                 SettingField {
                     key: "sessions_before_long_break".into(),
                     label: "Sessions Before Long Break".into(),
-                    description: Some("How many work sessions before a long break triggers.".into()),
+                    description: Some(
+                        "How many work sessions before a long break triggers.".into(),
+                    ),
                     field_type: SettingFieldType::Number,
                     default_value: serde_json::json!(4),
                 },
@@ -349,6 +354,7 @@ impl PanopticPlugin for PomodoroPlugin {
 // ---------------------------------------------------------------------------
 
 pub async fn get_pomodoro_overlay() -> impl IntoResponse {
-    let html = include_str!("../../../../../../../crates/services/panoptic-server/src/pomodoro.html");
+    let html =
+        include_str!("../../../../../../../crates/services/panoptic-server/src/pomodoro.html");
     ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html)
 }

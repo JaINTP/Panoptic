@@ -25,11 +25,30 @@ pub struct TwitchContribution {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "data")]
 pub enum TwitchAlert {
-    Follow { user_name: String },
-    Subscription { user_name: String, tier: String, is_gift: bool, cumulative_months: u32 },
-    GiftSubscription { user_name: String, total: u32, tier: String, is_anonymous: bool },
-    Raid { from_broadcaster_name: String, viewers: u32 },
-    Cheer { user_name: String, bits: u32, message: String },
+    Follow {
+        user_name: String,
+    },
+    Subscription {
+        user_name: String,
+        tier: String,
+        is_gift: bool,
+        cumulative_months: u32,
+    },
+    GiftSubscription {
+        user_name: String,
+        total: u32,
+        tier: String,
+        is_anonymous: bool,
+    },
+    Raid {
+        from_broadcaster_name: String,
+        viewers: u32,
+    },
+    Cheer {
+        user_name: String,
+        bits: u32,
+        message: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -56,7 +75,11 @@ pub struct ChatBadge {
 #[serde(tag = "type", content = "data")]
 pub enum ChatFragment {
     Text(String),
-    Emote { id: String, text: String, url: String },
+    Emote {
+        id: String,
+        text: String,
+        url: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

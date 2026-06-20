@@ -11,16 +11,12 @@ fn default_css(id: &str) -> String {
                 .to_string()
         }
         "twitch_hype_train" => {
-            include_str!(
-                "../../../../../../examples/twitch-hype-train/hype-train-default.css"
-            )
-            .to_string()
+            include_str!("../../../../../../examples/twitch-hype-train/hype-train-default.css")
+                .to_string()
         }
         "twitch_alerts" => {
-            include_str!(
-                "../../../../../../examples/twitch-alerts/twitch-alerts-default.css"
-            )
-            .to_string()
+            include_str!("../../../../../../examples/twitch-alerts/twitch-alerts-default.css")
+                .to_string()
         }
         _ => String::new(),
     }
@@ -54,7 +50,10 @@ pub fn set_overlay_css(
     let _ = css_version_tx.send(new_version);
 
     use tauri::Emitter;
-    let _ = app.emit("css_updated", serde_json::json!({ "id": id, "version": new_version }));
+    let _ = app.emit(
+        "css_updated",
+        serde_json::json!({ "id": id, "version": new_version }),
+    );
 
     Ok(())
 }

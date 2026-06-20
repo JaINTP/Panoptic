@@ -65,12 +65,7 @@ impl PanopticPlugin for TwitchChatPlugin {
                     label: "Entrance Animation".into(),
                     description: Some("Choose how messages appear.".into()),
                     field_type: SettingFieldType::Select {
-                        options: vec![
-                            "Slide".into(),
-                            "Fade".into(),
-                            "Pop".into(),
-                            "Bounce".into(),
-                        ],
+                        options: vec!["Slide".into(), "Fade".into(), "Pop".into(), "Bounce".into()],
                     },
                     default_value: serde_json::json!("Slide"),
                 },
@@ -79,12 +74,7 @@ impl PanopticPlugin for TwitchChatPlugin {
                     label: "Frame Style".into(),
                     description: Some("Add decorative elements to messages.".into()),
                     field_type: SettingFieldType::Select {
-                        options: vec![
-                            "None".into(),
-                            "Glass".into(),
-                            "Neon".into(),
-                            "Retro".into(),
-                        ],
+                        options: vec!["None".into(), "Glass".into(), "Neon".into(), "Retro".into()],
                     },
                     default_value: serde_json::json!("None"),
                 },

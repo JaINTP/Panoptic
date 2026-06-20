@@ -12,7 +12,13 @@
 
 use crate::engine::plugins::twitch_notifications::TwitchEventManager;
 use crate::engine::settings::AppSettings;
-use axum::{extract::State as AxumState, http::header, response::IntoResponse, routing::get, Router};
+use axum::{
+    extract::{Path, Query, State as AxumState},
+    http::header,
+    response::IntoResponse,
+    routing::{get, post},
+    Router,
+};
 use panoptic_core::{
     AppState, AuthState, PanopticPlugin, PluginCategory, PluginSettingsDefinition, SettingField,
     SettingFieldType,
@@ -52,6 +58,9 @@ pub struct GoalConfig {
     /// Whether to include in the active overlay.
     #[serde(default = "default_true")]
     pub enabled: bool,
+    /// Optional steps/tiers (e.g. [10.0, 25.0, 50.0]). If provided, the goal is treated as a multistep goal.
+    #[serde(default)]
+    pub steps: Vec<f64>,
 }
 
 fn default_true() -> bool {
@@ -175,7 +184,12 @@ impl PanopticPlugin for StreamGoalsPlugin {
 
             while rx.changed().await.is_ok() {
                 let state = rx.borrow().clone();
-                if let AuthState::Authenticated { provider, access_token, .. } = state {
+                if let AuthState::Authenticated {
+                    provider,
+                    access_token,
+                    ..
+                } = state
+                {
                     if provider != "twitch" {
                         continue;
                     }
@@ -202,7 +216,8 @@ impl PanopticPlugin for StreamGoalsPlugin {
                             tokio::time::interval(tokio::time::Duration::from_secs(30));
                         loop {
                             interval.tick().await;
-                            fetch_stream_metadata(&app_inner, &manager_inner, &client_id, &token).await;
+                            fetch_stream_metadata(&app_inner, &manager_inner, &client_id, &token)
+                                .await;
                         }
                     }));
                 } else if matches!(state, AuthState::Unauthenticated) {
@@ -239,26 +254,32 @@ impl PanopticPlugin for StreamGoalsPlugin {
                 }),
             )
             .route("/overlay/stream-goals", get(get_stream_goals_overlay))
+            .route(
+                "/stream-goals/variable/:name/increment",
+                post(increment_custom_var),
+            )
+            .route(
+                "/stream-goals/variable/:name/decrement",
+                post(decrement_custom_var),
+            )
+            .route("/stream-goals/variable/:name/set", post(set_custom_var))
     }
 
     fn settings_definition(&self) -> Option<PluginSettingsDefinition> {
         Some(PluginSettingsDefinition {
             category: PluginCategory::Overlay,
-            fields: vec![
-                SettingField {
-                    key: "reset_session".into(),
-                    label: "Reset Session Stats".into(),
-                    description: Some(
-                        "Reset all session counters (followers, subs, bits, raids…) to zero."
-                            .into(),
-                    ),
-                    field_type: SettingFieldType::Action {
-                        button_label: "Reset Session".into(),
-                        action_name: "reset_session".into(),
-                    },
-                    default_value: serde_json::Value::Null,
+            fields: vec![SettingField {
+                key: "reset_session".into(),
+                label: "Reset Session Stats".into(),
+                description: Some(
+                    "Reset all session counters (followers, subs, bits, raids…) to zero.".into(),
+                ),
+                field_type: SettingFieldType::Action {
+                    button_label: "Reset Session".into(),
+                    action_name: "reset_session".into(),
                 },
-            ],
+                default_value: serde_json::Value::Null,
+            }],
         })
     }
 
@@ -274,6 +295,7 @@ impl PanopticPlugin for StreamGoalsPlugin {
             let mut stats = self.manager.session_stats.lock().unwrap();
             *stats = Default::default();
             let _ = app.emit("session_stats_update", stats.clone());
+            self.manager.save_session_stats(app);
             return Ok(serde_json::json!({ "status": "reset" }));
         }
 
@@ -283,7 +305,7 @@ impl PanopticPlugin for StreamGoalsPlugin {
             let var_name = parts[1];
             match op {
                 "increment" | "decrement" | "reset_var" => {
-                    return update_custom_var_in_settings(app, var_name, op);
+                    return update_custom_var_in_settings(app, var_name, op, None);
                 }
                 _ => {}
             }
@@ -298,9 +320,8 @@ impl PanopticPlugin for StreamGoalsPlugin {
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub async fn get_stream_goals_overlay() -> impl IntoResponse {
-    let html = include_str!(
-        "../../../../../../../crates/services/panoptic-server/src/stream_goals.html"
-    );
+    let html =
+        include_str!("../../../../../../../crates/services/panoptic-server/src/stream_goals.html");
     ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html)
 }
 
@@ -321,6 +342,7 @@ fn update_custom_var_in_settings(
     app: &tauri::AppHandle,
     var_name: &str,
     op: &str,
+    val: Option<f64>,
 ) -> Result<serde_json::Value, String> {
     use tauri::Emitter;
     let mut settings = AppSettings::load(app);
@@ -328,14 +350,18 @@ fn update_custom_var_in_settings(
         .plugins
         .entry("stream_goals".into())
         .or_insert_with(|| serde_json::json!({}));
-    let mut sg: StreamGoalsSettings =
-        serde_json::from_value(raw.clone()).unwrap_or_default();
+    let mut sg: StreamGoalsSettings = serde_json::from_value(raw.clone()).unwrap_or_default();
 
     if let Some(cv) = sg.custom_vars.iter_mut().find(|v| v.name == var_name) {
         match op {
             "increment" => cv.value += cv.step,
             "decrement" => cv.value -= cv.step,
             "reset_var" => cv.value = 0.0,
+            "set" => {
+                if let Some(v) = val {
+                    cv.value = v;
+                }
+            }
             _ => {}
         }
         let new_val = cv.value;
@@ -397,5 +423,150 @@ async fn fetch_stream_metadata(
         }
         let stats = manager.session_stats.lock().unwrap().clone();
         let _ = app.emit("session_stats_update", stats);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HTTP API Route Handlers
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct SetQuery {
+    value: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct SetBody {
+    value: f64,
+}
+
+async fn increment_custom_var(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    if let Some(ref app) = app_state.app_handle {
+        match update_custom_var_in_settings(app, &name, "increment", None) {
+            Ok(json) => (axum::http::StatusCode::OK, axum::Json(json)).into_response(),
+            Err(err) => (axum::http::StatusCode::NOT_FOUND, err).into_response(),
+        }
+    } else {
+        (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            "Tauri AppHandle not initialized".to_string(),
+        )
+            .into_response()
+    }
+}
+
+async fn decrement_custom_var(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    if let Some(ref app) = app_state.app_handle {
+        match update_custom_var_in_settings(app, &name, "decrement", None) {
+            Ok(json) => (axum::http::StatusCode::OK, axum::Json(json)).into_response(),
+            Err(err) => (axum::http::StatusCode::NOT_FOUND, err).into_response(),
+        }
+    } else {
+        (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            "Tauri AppHandle not initialized".to_string(),
+        )
+            .into_response()
+    }
+}
+
+async fn set_custom_var(
+    AxumState(app_state): AxumState<AppState>,
+    Path(name): Path<String>,
+    Query(query): Query<SetQuery>,
+    body: Option<axum::Json<SetBody>>,
+) -> impl IntoResponse {
+    let value = if let Some(v) = query.value {
+        Some(v)
+    } else if let Some(axum::Json(b)) = body {
+        Some(b.value)
+    } else {
+        None
+    };
+
+    let Some(v) = value else {
+        return (
+            axum::http::StatusCode::BAD_REQUEST,
+            "Missing 'value' parameter in query or JSON body".to_string(),
+        )
+            .into_response();
+    };
+
+    if let Some(ref app) = app_state.app_handle {
+        match update_custom_var_in_settings(app, &name, "set", Some(v)) {
+            Ok(json) => (axum::http::StatusCode::OK, axum::Json(json)).into_response(),
+            Err(err) => (axum::http::StatusCode::NOT_FOUND, err).into_response(),
+        }
+    } else {
+        (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            "Tauri AppHandle not initialized".to_string(),
+        )
+            .into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::extract::{Path, Query, State as AxumState};
+    use axum::response::IntoResponse;
+    use panoptic_core::{AppState, AuthState, PlaybackState};
+    use tokio::sync::watch;
+
+    #[tokio::test]
+    async fn test_handlers_without_app_handle() {
+        let (auth_tx, _auth_rx) = watch::channel(AuthState::Unauthenticated);
+        let (_state_tx, state_rx) = watch::channel(PlaybackState::default());
+        let (_, css_version_rx) = watch::channel(1u32);
+
+        let app_state = AppState {
+            auth_tx,
+            state_rx,
+            css_version_rx,
+            settings_path: None,
+            app_handle: None,
+        };
+
+        // Test increment
+        let res_inc =
+            increment_custom_var(AxumState(app_state.clone()), Path("deaths".to_string()))
+                .await
+                .into_response();
+        assert_eq!(
+            res_inc.status(),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
+
+        // Test decrement
+        let res_dec =
+            decrement_custom_var(AxumState(app_state.clone()), Path("deaths".to_string()))
+                .await
+                .into_response();
+        assert_eq!(
+            res_dec.status(),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
+
+        // Test set
+        let query = SetQuery { value: Some(10.0) };
+        let res_set = set_custom_var(
+            AxumState(app_state),
+            Path("deaths".to_string()),
+            Query(query),
+            None,
+        )
+        .await
+        .into_response();
+        assert_eq!(
+            res_set.status(),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 }

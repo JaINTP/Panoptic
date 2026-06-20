@@ -56,6 +56,7 @@ impl EngineOrchestrator {
             self.css_version_rx.clone(),
             settings_path,
             plugins_server,
+            Some(app_handle.clone()),
         ));
 
         let app_handle_cmd = app_handle.clone();

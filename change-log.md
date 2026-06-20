@@ -4,6 +4,7 @@
 
 ### Added
 
+- **HTTP API Endpoints for Stream Goal Variables:** Added POST endpoints to increment, decrement, and set custom stream goal variables on the local Axum server. This allows external tools (such as OBS or Streamer.bot) to dynamically alter variables, which immediately persists settings, triggers real-time front-end updates, and returns the updated values as JSON.
 - **Overlay Stylesheet & Text Customization:** Added customizable CSS stylesheets and complete text customizability for both the Now Playing and Twitch Notifications overlays. Settings are dynamically loaded and injected into the HTML templates served on `/overlay/now-playing` and `/overlay/twitch`.
 - **Unified Split-Pane GUI Layout:** Redesigned the display view layout to present a 50/50 side-by-side split layout. The left column shows the live preview card on top and the settings configuration inputs on the bottom. The right column houses the full-height CodeMirror editor for live stylesheet styling.
 - **Modular Plugin Architecture (Backend):** Refactored the core media orchestrator, settings management, and Axum routing into a generic compile-time plugin registry, splitting native player detection (MPRIS/SMTC) and Spotify fallbacks into standalone plugins.

@@ -84,7 +84,9 @@ impl PanopticPlugin for TwitchAlertsPlugin {
             let app_handle = app.clone();
             let manager = self.manager.clone();
             tauri::async_runtime::spawn(async move {
-                let alerts = vec![TwitchAlert::Follow { user_name: "Entity_Alpha".into() }];
+                let alerts = vec![TwitchAlert::Follow {
+                    user_name: "Entity_Alpha".into(),
+                }];
                 for alert in alerts {
                     update_alert(&app_handle, &manager.alert_state, alert);
                     tokio::time::sleep(std::time::Duration::from_millis(1500)).await;

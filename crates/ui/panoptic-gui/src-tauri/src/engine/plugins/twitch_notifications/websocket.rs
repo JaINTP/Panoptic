@@ -1,7 +1,7 @@
 use super::event_manager::TwitchEventManager;
 use super::models::{
-    AlertState, ChatBadge, ChatFragment, ChatMessageData, EventSubSession,
-    QueuedAlert, TwitchAlert, TwitchBroadcasterInfo, TwitchContribution, TwitchEventSubMessage,
+    AlertState, ChatBadge, ChatFragment, ChatMessageData, EventSubSession, QueuedAlert,
+    TwitchAlert, TwitchBroadcasterInfo, TwitchContribution, TwitchEventSubMessage,
 };
 use futures_util::StreamExt;
 use std::sync::{Arc, Mutex};
@@ -33,7 +33,10 @@ pub async fn fetch_broadcaster_info(
     Ok(TwitchBroadcasterInfo {
         id: user["id"].as_str().unwrap_or_default().to_string(),
         login: user["login"].as_str().unwrap_or_default().to_string(),
-        display_name: user["display_name"].as_str().unwrap_or_default().to_string(),
+        display_name: user["display_name"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
     })
 }
 
@@ -107,11 +110,11 @@ pub async fn run_websocket_loop(
                 let mut lock = manager.broadcaster_info.lock().unwrap();
                 *lock = info.clone();
             }
-            manager.fetch_metadata(&client_id, &access_token, &info.id).await;
+            manager
+                .fetch_metadata(&client_id, &access_token, &info.id)
+                .await;
             loop {
-                if let Ok((mut ws, _)) =
-                    connect_async("wss://eventsub.wss.twitch.tv/ws").await
-                {
+                if let Ok((mut ws, _)) = connect_async("wss://eventsub.wss.twitch.tv/ws").await {
                     info!("Twitch EventSub: WebSocket connected.");
                     while let Some(msg_result) = ws.next().await {
                         match msg_result {
@@ -119,7 +122,15 @@ pub async fn run_websocket_loop(
                                 if let Ok(msg) =
                                     serde_json::from_str::<TwitchEventSubMessage>(&text)
                                 {
-                                    handle_ws_message(&app, &manager, &client_id, &access_token, &info.id, msg).await;
+                                    handle_ws_message(
+                                        &app,
+                                        &manager,
+                                        &client_id,
+                                        &access_token,
+                                        &info.id,
+                                        msg,
+                                    )
+                                    .await;
                                 }
                             }
                             Ok(Message::Close(frame)) => {
@@ -155,9 +166,7 @@ async fn handle_ws_message(
     let Some(meta) = msg.metadata else { return };
     match meta.message_type.as_str() {
         "session_welcome" => {
-            if let Some(EventSubSession { id: session_id }) =
-                msg.payload.and_then(|p| p.session)
-            {
+            if let Some(EventSubSession { id: session_id }) = msg.payload.and_then(|p| p.session) {
                 let _ = subscribe_all_events(client_id, access_token, broadcaster_id, &session_id)
                     .await;
             }
@@ -260,7 +269,10 @@ pub async fn handle_event(
                 app,
                 &manager.alert_state,
                 TwitchAlert::GiftSubscription {
-                    user_name: event["user_name"].as_str().unwrap_or("Anonymous").to_string(),
+                    user_name: event["user_name"]
+                        .as_str()
+                        .unwrap_or("Anonymous")
+                        .to_string(),
                     total: gift_count as u32,
                     tier: event["tier"].as_str().unwrap_or("1000").to_string(),
                     is_anonymous: event["is_anonymous"].as_bool().unwrap_or(false),
@@ -321,6 +333,7 @@ fn emit_session_stats(app: &tauri::AppHandle, manager: &TwitchEventManager) {
     use tauri::Emitter;
     let stats = manager.session_stats.lock().unwrap().clone();
     let _ = app.emit("session_stats_update", stats);
+    manager.save_session_stats(app);
 }
 
 async fn handle_chat_message(
@@ -329,8 +342,14 @@ async fn handle_chat_message(
     event: serde_json::Value,
 ) {
     use tauri::Emitter;
-    let user_login = event["chatter_user_login"].as_str().unwrap_or_default().to_string();
-    let user_id = event["chatter_user_id"].as_str().unwrap_or_default().to_string();
+    let user_login = event["chatter_user_login"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    let user_id = event["chatter_user_id"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     let is_first_msg = event["is_first_msg"].as_bool().unwrap_or(false);
 
     let pronouns = manager.get_user_pronouns(&user_login).await;
@@ -362,8 +381,14 @@ async fn handle_chat_message(
         id: event["message_id"].as_str().unwrap_or_default().to_string(),
         user_id,
         user_login,
-        user_name: event["chatter_user_name"].as_str().unwrap_or_default().to_string(),
-        message: event["message"]["text"].as_str().unwrap_or_default().to_string(),
+        user_name: event["chatter_user_name"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+        message: event["message"]["text"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
         fragments,
         color: event["color"].as_str().unwrap_or("#ffffff").to_string(),
         pronouns,
@@ -395,15 +420,17 @@ fn resolve_badges(manager: &TwitchEventManager, event: &serde_json::Value) -> Ve
             let id = b["id"].as_str().unwrap_or_default().to_string();
             let info = b["info"].as_str().unwrap_or_default().to_string();
             let image_url = b_cache.get(&set_id).and_then(|v| v.get(&id)).cloned();
-            ChatBadge { set_id, id, info, image_url }
+            ChatBadge {
+                set_id,
+                id,
+                info,
+                image_url,
+            }
         })
         .collect()
 }
 
-fn resolve_fragments(
-    manager: &TwitchEventManager,
-    event: &serde_json::Value,
-) -> Vec<ChatFragment> {
+fn resolve_fragments(manager: &TwitchEventManager, event: &serde_json::Value) -> Vec<ChatFragment> {
     let e_cache = manager.emote_cache.lock().unwrap();
     if let Some(arr) = event["message"]["fragments"].as_array() {
         arr.iter()
@@ -425,7 +452,10 @@ fn resolve_fragments(
             .collect()
     } else {
         vec![ChatFragment::Text(
-            event["message"]["text"].as_str().unwrap_or_default().to_string(),
+            event["message"]["text"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
         )]
     }
 }
@@ -442,7 +472,11 @@ pub fn update_alert(
         .as_secs();
     let id = format!("alert_{}_{}", now, rand::random::<u16>());
     let mut state = state_lock.lock().unwrap();
-    state.active_alerts.push(QueuedAlert { id, alert, timestamp: now });
+    state.active_alerts.push(QueuedAlert {
+        id,
+        alert,
+        timestamp: now,
+    });
     if state.active_alerts.len() > 10 {
         state.active_alerts.remove(0);
     }

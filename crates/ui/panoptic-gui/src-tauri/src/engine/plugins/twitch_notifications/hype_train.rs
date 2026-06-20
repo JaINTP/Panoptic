@@ -44,7 +44,12 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
             manager.init_pronouns().await;
             while rx.changed().await.is_ok() {
                 let state = rx.borrow().clone();
-                if let AuthState::Authenticated { provider, access_token, .. } = state {
+                if let AuthState::Authenticated {
+                    provider,
+                    access_token,
+                    ..
+                } = state
+                {
                     if provider != "twitch" {
                         continue;
                     }
@@ -65,8 +70,7 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
                         if client_id.is_empty() {
                             return;
                         }
-                        run_websocket_loop(app_inner, manager_inner, client_id, access_token)
-                            .await;
+                        run_websocket_loop(app_inner, manager_inner, client_id, access_token).await;
                     }));
                 } else if matches!(state, AuthState::Unauthenticated) {
                     if let Some(t) = current_task.take() {
@@ -85,10 +89,8 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
                 "/twitch/hype-train",
                 get(move |AxumState(app_state): AxumState<AppState>| {
                     let state = hype_state.lock().unwrap().clone();
-                    let settings = super::load_plugin_settings(
-                        app_state.settings_path,
-                        "twitch_hype_train",
-                    );
+                    let settings =
+                        super::load_plugin_settings(app_state.settings_path, "twitch_hype_train");
                     async move {
                         axum::Json(serde_json::json!({ "state": state, "settings": settings }))
                     }
@@ -150,10 +152,7 @@ impl PanopticPlugin for TwitchHypeTrainPlugin {
     }
 }
 
-async fn simulate_mock_hype_train(
-    app: &tauri::AppHandle,
-    state_lock: &Arc<Mutex<HypeTrainState>>,
-) {
+async fn simulate_mock_hype_train(app: &tauri::AppHandle, state_lock: &Arc<Mutex<HypeTrainState>>) {
     use tauri::Emitter;
     let mut state = state_lock.lock().unwrap();
     state.active = true;

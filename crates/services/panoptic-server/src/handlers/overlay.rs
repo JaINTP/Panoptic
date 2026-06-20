@@ -41,7 +41,11 @@ pub async fn get_overlay(State(state): State<AppState>) -> impl IntoResponse {
         if path.exists() {
             if let Ok(content) = std::fs::read_to_string(path) {
                 if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                    for key in ["not_playing_title", "not_playing_artist", "not_playing_album"] {
+                    for key in [
+                        "not_playing_title",
+                        "not_playing_artist",
+                        "not_playing_album",
+                    ] {
                         if let Some(v) = val.get(key) {
                             if v.is_string() && !v.as_str().unwrap().trim().is_empty() {
                                 config[key] = v.clone();

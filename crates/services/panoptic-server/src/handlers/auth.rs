@@ -170,6 +170,7 @@ mod tests {
             state_rx,
             css_version_rx,
             settings_path: None,
+            app_handle: None,
         };
 
         let mut params = HashMap::new();
@@ -205,6 +206,7 @@ mod tests {
             state_rx,
             css_version_rx,
             settings_path: None,
+            app_handle: None,
         };
 
         let mut params = HashMap::new();
@@ -244,6 +246,7 @@ mod tests {
             state_rx,
             css_version_rx,
             settings_path: None,
+            app_handle: None,
         };
 
         let mut params = HashMap::new();
@@ -275,6 +278,7 @@ mod tests {
             state_rx,
             css_version_rx,
             settings_path: None,
+            app_handle: None,
         };
 
         let params = HashMap::new();

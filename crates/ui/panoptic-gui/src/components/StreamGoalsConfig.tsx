@@ -487,7 +487,7 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
           {goal.label || goal.variable}
         </div>
         <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-          {goal.variable} → {goal.target}
+          {goal.variable} → {goal.steps && goal.steps.length > 0 ? `Tiers: ${goal.steps.join(' → ')}` : goal.target}
         </span>
         <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginLeft: '4px' }}>
           {isOpen ? '▲' : '▼'}
@@ -543,6 +543,23 @@ const GoalEditor: React.FC<GoalEditorProps> = ({
                 step="1"
                 value={goal.target}
                 onChange={(e) => onChange({ target: parseFloat(e.target.value) || 1 })}
+              />
+            </div>
+
+            {/* Steps (Multistep Progress) */}
+            <div style={{ gridColumn: '1/-1' }}>
+              {fieldLabel('Target Steps / Tiers (Optional, comma-separated)')}
+              <input
+                style={inputStyle}
+                value={goal.steps?.join(', ') || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const parsed = val.split(',')
+                    .map(x => parseFloat(x.trim()))
+                    .filter(x => !isNaN(x));
+                  onChange({ steps: parsed });
+                }}
+                placeholder="e.g. 10, 25, 50"
               />
             </div>
 

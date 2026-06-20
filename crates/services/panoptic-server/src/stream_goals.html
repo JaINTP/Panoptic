@@ -189,8 +189,29 @@
 
       enabled.forEach((goal, idx) => {
         const current = resolveValue(variables, goal.variable);
-        const target = Number(goal.target) || 1;
-        const pct = Math.min(100, Math.round((current / target) * 100));
+        const steps = goal.steps && goal.steps.length > 0 ? goal.steps.map(Number) : null;
+        let currentTarget = Number(goal.target) || 1;
+        let currentStart = 0;
+        let stepIndex = 0;
+        let isMultistep = false;
+
+        if (steps) {
+          isMultistep = true;
+          while (stepIndex < steps.length && current >= steps[stepIndex]) {
+            stepIndex++;
+          }
+          if (stepIndex < steps.length) {
+            currentTarget = steps[stepIndex];
+            currentStart = stepIndex > 0 ? steps[stepIndex - 1] : 0;
+          } else {
+            currentTarget = steps[steps.length - 1];
+            currentStart = steps.length > 1 ? steps[steps.length - 2] : 0;
+          }
+        }
+
+        const range = currentTarget - currentStart;
+        const currentProgressInStep = isMultistep ? Math.max(0, current - currentStart) : current;
+        const pct = Math.min(100, Math.round((currentTarget > currentStart && range > 0) ? (currentProgressInStep / range) * 100 : (current / currentTarget) * 100));
         const color = goal.color || '#9d4edd';
         const isMilestone = pct >= 100 && goal.milestone_celebration !== false;
 
@@ -214,14 +235,35 @@
           container.appendChild(card);
         }
 
-        card.querySelector('.goal-label').textContent = goal.label || goal.variable;
+        // Template label
+        let labelText = goal.label || goal.variable;
+        const labelMatches = labelText.match(/\{\{([^}]+)\}\}/g);
+        if (labelMatches) {
+          labelMatches.forEach(match => {
+            const varName = match.slice(2, -2).trim();
+            if (varName === 'step') {
+              labelText = labelText.replace(match, isMultistep ? Math.min(stepIndex + 1, steps.length) : 1);
+            } else if (varName === 'total_steps') {
+              labelText = labelText.replace(match, isMultistep ? steps.length : 1);
+            } else if (varName === 'target') {
+              labelText = labelText.replace(match, (Number(goal.target) || 1).toLocaleString());
+            } else if (varName === 'step_target') {
+              labelText = labelText.replace(match, currentTarget.toLocaleString());
+            } else {
+              const val = resolveValue(variables, varName);
+              labelText = labelText.replace(match, val.toLocaleString());
+            }
+          });
+        }
+
+        card.querySelector('.goal-label').textContent = labelText;
         card.querySelector('.goal-fill').style.width = `${pct}%`;
         card.querySelector('.goal-fill').style.background = color;
 
         const showNums = goal.show_numbers !== false;
         const numEl = card.querySelector('.goal-numbers');
         numEl.style.display = showNums ? '' : 'none';
-        if (showNums) numEl.textContent = `${current.toLocaleString()} / ${target.toLocaleString()}`;
+        if (showNums) numEl.textContent = `${current.toLocaleString()} / ${currentTarget.toLocaleString()}`;
 
         const showPct = goal.show_percentage !== false;
         const pctEl = card.querySelector('.goal-pct');

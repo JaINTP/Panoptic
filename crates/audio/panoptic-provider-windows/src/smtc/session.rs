@@ -98,9 +98,9 @@ fn detect_image_ext(bytes: &[u8]) -> &'static str {
 fn try_read_thumbnail_sync(
     thumb_ref: windows::Storage::Streams::IRandomAccessStreamReference,
 ) -> Option<Vec<u8>> {
+    use windows::core::Interface;
     use windows::Foundation::{AsyncStatus, IAsyncInfo};
     use windows::Storage::Streams::{DataReader, IInputStream, IRandomAccessStream};
-    use windows::core::Interface;
 
     // Start the open operation and spin-poll via IAsyncInfo until it completes.
     let open_op = thumb_ref.OpenReadAsync().ok()?;
@@ -120,7 +120,10 @@ fn try_read_thumbnail_sync(
 
     // Cast to IRandomAccessStream to read Size(), then to IInputStream for DataReader.
     let rand_stream = stream.cast::<IRandomAccessStream>().ok()?;
-    let size = rand_stream.Size().ok().filter(|&s| s > 0 && s < 10_000_000)?;
+    let size = rand_stream
+        .Size()
+        .ok()
+        .filter(|&s| s > 0 && s < 10_000_000)?;
     let input_stream = rand_stream.cast::<IInputStream>().ok()?;
     let reader = DataReader::CreateDataReader(&input_stream).ok()?;
 

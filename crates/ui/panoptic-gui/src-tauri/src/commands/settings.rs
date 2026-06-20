@@ -54,7 +54,10 @@ pub fn get_storage_paths(app: tauri::AppHandle) -> serde_json::Value {
     let artwork_dir = app
         .path()
         .app_cache_dir()
-        .map(|mut p| { p.push("artworks"); p.to_string_lossy().to_string() })
+        .map(|mut p| {
+            p.push("artworks");
+            p.to_string_lossy().to_string()
+        })
         .unwrap_or_default();
 
     serde_json::json!({

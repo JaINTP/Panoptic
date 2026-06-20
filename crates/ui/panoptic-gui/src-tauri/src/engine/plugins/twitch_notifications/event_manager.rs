@@ -19,6 +19,32 @@ pub struct TwitchEventManager {
 }
 
 impl TwitchEventManager {
+    pub fn load_session_stats(&self, app: &tauri::AppHandle) {
+        use tauri::Manager;
+        if let Ok(config_dir) = app.path().app_config_dir() {
+            let path = config_dir.join("session_stats.json");
+            if path.exists() {
+                if let Ok(content) = std::fs::read_to_string(&path) {
+                    if let Ok(loaded) = serde_json::from_str::<SessionStats>(&content) {
+                        let mut stats = self.session_stats.lock().unwrap();
+                        *stats = loaded;
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn save_session_stats(&self, app: &tauri::AppHandle) {
+        use tauri::Manager;
+        if let Ok(config_dir) = app.path().app_config_dir() {
+            let path = config_dir.join("session_stats.json");
+            let stats = self.session_stats.lock().unwrap().clone();
+            if let Ok(content) = serde_json::to_string_pretty(&stats) {
+                let _ = std::fs::write(path, content);
+            }
+        }
+    }
+
     pub fn new() -> Self {
         Self {
             hype_state: Arc::new(Mutex::new(HypeTrainState {
@@ -32,8 +58,12 @@ impl TwitchEventManager {
                 started_at: String::new(),
                 expires_at: String::new(),
             })),
-            alert_state: Arc::new(Mutex::new(AlertState { active_alerts: Vec::new() })),
-            chat_state: Arc::new(Mutex::new(ChatState { messages: Vec::new() })),
+            alert_state: Arc::new(Mutex::new(AlertState {
+                active_alerts: Vec::new(),
+            })),
+            chat_state: Arc::new(Mutex::new(ChatState {
+                messages: Vec::new(),
+            })),
             broadcaster_info: Arc::new(Mutex::new(TwitchBroadcasterInfo::default())),
             pronoun_map: Arc::new(Mutex::new(HashMap::new())),
             user_pronoun_cache: Arc::new(Mutex::new(HashMap::new())),
@@ -45,8 +75,10 @@ impl TwitchEventManager {
 
     pub async fn fetch_metadata(&self, client_id: &str, token: &str, broadcaster_id: &str) {
         info!("Twitch Chat: Refreshing metadata cache (badges & emotes)...");
-        self.fetch_all_badges(client_id, token, broadcaster_id).await;
-        self.fetch_all_emotes(client_id, token, broadcaster_id).await;
+        self.fetch_all_badges(client_id, token, broadcaster_id)
+            .await;
+        self.fetch_all_emotes(client_id, token, broadcaster_id)
+            .await;
     }
 
     async fn fetch_all_badges(&self, client_id: &str, token: &str, broadcaster_id: &str) {
@@ -147,7 +179,10 @@ impl TwitchEventManager {
         if let Some(emotes) = data["data"].as_array() {
             for e in emotes {
                 let id = e["id"].as_str().unwrap_or_default().to_string();
-                let url = e["images"]["url_1x"].as_str().unwrap_or_default().to_string();
+                let url = e["images"]["url_1x"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string();
                 cache.insert(id, url);
             }
         }
@@ -166,7 +201,10 @@ impl TwitchEventManager {
                         entries.into_iter().map(|e| (e.name, e.display)).collect();
                     let mut p_map = self.pronoun_map.lock().unwrap();
                     *p_map = map;
-                    info!("Twitch Chat: Initialized pronouns map ({} entries)", p_map.len());
+                    info!(
+                        "Twitch Chat: Initialized pronouns map ({} entries)",
+                        p_map.len()
+                    );
                 }
             }
             Err(e) => error!("Twitch Chat: Failed to fetch pronouns map: {}", e),
@@ -197,10 +235,7 @@ impl TwitchEventManager {
                             if let Some(p_str) = p_map.get(p_id) {
                                 let mut cache = self.user_pronoun_cache.lock().unwrap();
                                 cache.insert(login.to_string(), p_str.clone());
-                                info!(
-                                    "Twitch Chat: Resolved pronouns for {}: {}",
-                                    login, p_str
-                                );
+                                info!("Twitch Chat: Resolved pronouns for {}: {}", login, p_str);
                                 return Some(p_str.clone());
                             }
                         }
@@ -208,7 +243,10 @@ impl TwitchEventManager {
                 }
             }
             Err(e) => {
-                warn!("Twitch Chat: Failed to fetch user pronouns for {}: {}", login, e)
+                warn!(
+                    "Twitch Chat: Failed to fetch user pronouns for {}: {}",
+                    login, e
+                )
             }
         }
         None
