@@ -298,6 +298,10 @@ function App() {
             template={template}
             setTemplate={setTemplate}
             playback={playback}
+            plugins={plugins}
+            pluginSettings={pluginSettings}
+            updatePluginSetting={updatePluginSetting}
+            triggerAction={triggerAction}
           />
         );
     }

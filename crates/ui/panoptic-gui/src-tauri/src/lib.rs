@@ -7,6 +7,7 @@ pub mod engine {
     pub mod settings;
     pub mod plugins {
         pub mod mpris_smtc;
+        pub mod obs_websocket;
         pub mod pomodoro;
         pub mod spotify;
         pub mod stream_goals;
@@ -22,7 +23,8 @@ use crate::commands::overlay::{
     apply_aesthetic_pack, get_overlay_css, get_overlay_version, set_overlay_css,
 };
 use crate::commands::plugins::{
-    get_plugin_settings, get_plugins_metadata, set_plugin_settings, trigger_plugin_action,
+    get_obs_status, get_plugin_settings, get_plugins_metadata, set_plugin_settings,
+    trigger_plugin_action,
 };
 use crate::commands::settings::{
     get_app_version, get_not_playing_settings, get_output_template, get_storage_paths,
@@ -49,6 +51,11 @@ pub fn run() {
 
     let twitch_manager =
         Arc::new(crate::engine::plugins::twitch_notifications::TwitchEventManager::new());
+
+    // Build OBS plugin separately so we can expose its status to Tauri commands.
+    let obs_plugin = crate::engine::plugins::obs_websocket::ObsWebsocketPlugin::new();
+    let obs_status_arc = obs_plugin.status.clone();
+
     let registry = crate::engine::plugin_registry::PluginRegistry::new()
         .register(Box::new(
             crate::engine::plugins::spotify::SpotifyPlugin::new(),
@@ -75,6 +82,7 @@ pub fn run() {
         .register(Box::new(
             crate::engine::plugins::stream_goals::StreamGoalsPlugin::new(twitch_manager.clone()),
         ))
+        .register(Box::new(obs_plugin))
         .register(Box::new(
             crate::engine::plugins::pomodoro::PomodoroPlugin::new(),
         ));
@@ -120,6 +128,7 @@ pub fn run() {
             get_app_version,
             get_storage_paths,
             open_directory,
+            get_obs_status,
             // Stream Goals commands
             get_session_stats,
             reset_stream_goals_session,
@@ -143,6 +152,8 @@ pub fn run() {
             // Expose TwitchEventManager for stream-goals Tauri commands
             twitch_manager_for_app.load_session_stats(app.handle());
             app.manage(twitch_manager_for_app);
+            // Expose OBS status for get_obs_status command
+            app.manage(obs_status_arc);
 
             let orchestrator_handle = app.handle().clone();
             std::thread::spawn(move || {

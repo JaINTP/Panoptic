@@ -1,3 +1,4 @@
+use crate::engine::plugins::obs_websocket::ObsStatus;
 use crate::engine::settings::AppSettings;
 use panoptic_core::{PanopticPlugin, PluginMetadata};
 use std::sync::Arc;
@@ -42,6 +43,13 @@ pub fn set_plugin_settings(
     let mut settings = AppSettings::load(&app);
     settings.plugins.insert(plugin_id, new_settings);
     settings.save(&app)
+}
+
+#[tauri::command]
+pub fn get_obs_status(
+    state: tauri::State<Arc<std::sync::Mutex<ObsStatus>>>,
+) -> ObsStatus {
+    state.lock().unwrap().clone()
 }
 
 #[tauri::command]

@@ -50,7 +50,7 @@ Enable viewers to manipulate overlay visuals directly using Twitch Bits.
   - **Shipped in v0.3.3/v0.3.4:** `current_track.txt` written to `app_config_dir`; artwork cached under `app_cache_dir/artworks`; Storage tab shows real resolved paths with working Browse buttons.
 - **Global Theme Swapper:** A single button in the UI to instantly swap between aesthetic packs across all plugins.
 - **Remote Configuration:** Secure web dashboard to tweak settings from a secondary device (phone/tablet).
-- **OBS WebSocket Integration:** Allow Panoptic actions to control OBS scenes and sources directly.
+- ~~**OBS WebSocket Integration:** Allow Panoptic actions to control OBS scenes and sources directly.~~
 
 ---
 *Note: This roadmap is subject to change based on community feedback and developer bandwidth.*

@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-06-21
+
+### Added
+
+- **OBS WebSocket Integration:** Full OBS WebSocket v5 connection from Panoptic to a running OBS instance. Supports SHA-256 challenge-response authentication and automatic reconnection with 5 s backoff. The Output tab exposes:
+  - Scene switching: live scene list with one-click switching and active scene highlight.
+  - Audio source control: mute/unmute any audio input (desktop audio, mic, media sources). Only inputs with actual audio capability are shown, detected by probing GetInputMute at connect time.
+  - Source visibility: toggle the enabled/hidden state of every source in the active scene. List updates automatically on scene change.
+  - Real-time sync via event subscriptions (CurrentProgramSceneChanged, SceneListChanged, InputMuteStateChanged, SceneItemEnableStateChanged, InputCreated/Removed, SceneItemCreated/Removed).
+  - Connection status badge (connected/disconnected/error) displayed inline above the controls.
+
 ## [0.3.8] - 2026-06-21
 
 ### Added

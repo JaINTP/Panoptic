@@ -1,19 +1,73 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { PlaybackState } from '../components/OverlayPreview';
 import { PlaceholderGrid } from '../components/PlaceholderGrid';
+import { SettingsField, PluginDef } from '../components/SettingsField';
+
+interface ObsAudioSource {
+  name: string;
+  muted: boolean;
+}
+
+interface ObsSceneItem {
+  id: number;
+  name: string;
+  enabled: boolean;
+}
+
+interface ObsStatus {
+  connected: boolean;
+  current_scene: string;
+  scenes: string[];
+  audio_sources: ObsAudioSource[];
+  scene_items: ObsSceneItem[];
+  error: string | null;
+}
 
 interface OutputViewProps {
   template: string;
   setTemplate: (val: string) => void;
   playback: PlaybackState;
+  plugins: PluginDef[];
+  pluginSettings: Record<string, Record<string, any>>;
+  updatePluginSetting: (pluginId: string, key: string, value: any) => void;
+  triggerAction: (pluginId: string, actionName: string) => void;
 }
 
 export const OutputView: React.FC<OutputViewProps> = ({
   template,
   setTemplate,
   playback,
+  plugins,
+  pluginSettings,
+  updatePluginSetting,
+  triggerAction,
 }) => {
+  const [obsStatus, setObsStatus] = useState<ObsStatus>({
+    connected: false,
+    current_scene: '',
+    scenes: [],
+    audio_sources: [],
+    scene_items: [],
+    error: null,
+  });
+
+  useEffect(() => {
+    invoke<ObsStatus>('get_obs_status')
+      .then(setObsStatus)
+      .catch(() => {});
+
+    const unlisten = listen<ObsStatus>('obs_status', (e) => {
+      setObsStatus(e.payload);
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
+
+  const outputPlugins = plugins.filter((p) => p.category === 'output');
+
   const getFormatTime = (ms: number) => {
     if (isNaN(ms) || ms <= 0) return '0:00';
     const totalSecs = Math.floor(ms / 1000);
@@ -102,9 +156,254 @@ export const OutputView: React.FC<OutputViewProps> = ({
     }
   };
 
+  const handleSwitchScene = (scene: string) => {
+    triggerAction('obs-websocket', `switch_scene:${scene}`);
+  };
+
+  const handleToggleMute = (name: string) => {
+    triggerAction('obs-websocket', `toggle_mute:${name}`);
+  };
+
+  const handleToggleSceneItem = (id: number, currentEnabled: boolean) => {
+    triggerAction('obs-websocket', `toggle_scene_item:${id}:${!currentEnabled}`);
+  };
+
+  const sectionLabelStyle: React.CSSProperties = {
+    fontSize: '11px',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    color: 'var(--text-muted)',
+    marginBottom: '6px',
+  };
+
   return (
     <div className="view-pane view-pane-scrollable">
-      <h1 className="view-title">Output Templating</h1>
+      <h1 className="view-title">Output</h1>
+
+      {/* Output-category plugin settings */}
+      {outputPlugins.map((plugin) => (
+        <div key={plugin.id} className="section">
+          <h2 className="section-title">{plugin.name}</h2>
+          <div className="settings-card">
+            {plugin.fields.map((field) => (
+              <SettingsField
+                key={field.key}
+                field={field}
+                category={plugin.category}
+                currentValue={pluginSettings[plugin.id]?.[field.key]}
+                accessTokenExists={!!pluginSettings[plugin.id]?.access_token}
+                onUpdate={(key, value) => updatePluginSetting(plugin.id, key, value)}
+                onTriggerAction={(actionName) => triggerAction(plugin.id, actionName)}
+              />
+            ))}
+          </div>
+
+          {/* OBS-specific: connection status, scenes, audio, and source visibility */}
+          {plugin.id === 'obs-websocket' && (
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+              {/* Status bar */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <span
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    flexShrink: 0,
+                    background: obsStatus.connected
+                      ? 'var(--accent-primary)'
+                      : obsStatus.error
+                      ? '#e05555'
+                      : 'var(--text-muted)',
+                  }}
+                />
+                <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>
+                  {obsStatus.connected
+                    ? obsStatus.current_scene
+                      ? `Connected — ${obsStatus.current_scene}`
+                      : 'Connected'
+                    : obsStatus.error ?? 'Disconnected'}
+                </span>
+              </div>
+
+              {/* Scene switcher */}
+              {obsStatus.scenes.length > 0 && (
+                <div>
+                  <div style={sectionLabelStyle}>Scenes</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {obsStatus.scenes.map((scene) => {
+                      const isActive = scene === obsStatus.current_scene;
+                      return (
+                        <button
+                          key={scene}
+                          type="button"
+                          onClick={() => !isActive && handleSwitchScene(scene)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '7px 10px',
+                            borderRadius: '6px',
+                            border: isActive
+                              ? '1px solid var(--accent-primary)'
+                              : '1px solid var(--border)',
+                            background: isActive ? 'rgba(139, 92, 246, 0.08)' : 'var(--bg-card)',
+                            color: isActive ? 'var(--accent-primary)' : 'var(--text-main)',
+                            fontSize: '13px',
+                            cursor: isActive ? 'default' : 'pointer',
+                            textAlign: 'left',
+                            width: '100%',
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              flexShrink: 0,
+                              background: isActive ? 'var(--accent-primary)' : 'transparent',
+                              border: isActive ? 'none' : '1px solid var(--border)',
+                            }}
+                          />
+                          {scene}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Audio source mute controls */}
+              {obsStatus.audio_sources.length > 0 && (
+                <div>
+                  <div style={sectionLabelStyle}>Audio Sources</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {obsStatus.audio_sources.map((src) => (
+                      <div
+                        key={src.name}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '7px 10px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-card)',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '13px',
+                            color: src.muted ? 'var(--text-muted)' : 'var(--text-main)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          {src.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleMute(src.name)}
+                          style={{
+                            flexShrink: 0,
+                            marginLeft: '10px',
+                            padding: '3px 10px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            background: src.muted ? 'rgba(224, 85, 85, 0.12)' : 'var(--bg-hover)',
+                            color: src.muted ? '#e05555' : 'var(--text-main)',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {src.muted ? 'Unmute' : 'Mute'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Scene source visibility toggles */}
+              {obsStatus.scene_items.length > 0 && (
+                <div>
+                  <div style={sectionLabelStyle}>
+                    Sources — {obsStatus.current_scene}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {obsStatus.scene_items.map((item) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '7px 10px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-card)',
+                          opacity: item.enabled ? 1 : 0.5,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '13px',
+                            color: 'var(--text-main)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          {item.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSceneItem(item.id, item.enabled)}
+                          style={{
+                            flexShrink: 0,
+                            marginLeft: '10px',
+                            padding: '3px 10px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            background: item.enabled
+                              ? 'rgba(139, 92, 246, 0.08)'
+                              : 'var(--bg-hover)',
+                            color: item.enabled ? 'var(--accent-primary)' : 'var(--text-muted)',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {item.enabled ? 'Visible' : 'Hidden'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Text output templating */}
       <div className="section" style={{ marginBottom: '16px' }}>
         <h2 className="section-title">Template String</h2>
         <textarea
