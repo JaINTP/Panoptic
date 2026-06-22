@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Monitor, HardDrive, ShieldCheck, Type, X, ExternalLink } from 'lucide-react';
+import { Monitor, HardDrive, ShieldCheck, Type, X, ExternalLink, Link2 } from 'lucide-react';
 
-export type View = 'storage' | 'auth' | 'output' | 'display';
+export type View = 'storage' | 'auth' | 'output' | 'display' | 'integrations';
 
 interface SidebarProps {
   activeView: View;
@@ -44,6 +44,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => setActiveView('auth')}
       >
         <ShieldCheck size={18} /> Auth
+      </button>
+      <button
+        type="button"
+        className={`sidebar-item ${activeView === 'integrations' ? 'active' : ''}`}
+        onClick={() => setActiveView('integrations')}
+      >
+        <Link2 size={18} /> Integrations
       </button>
       <button
         type="button"

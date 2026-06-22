@@ -11,6 +11,7 @@ import { DisplayView } from './views/DisplayView';
 import { StorageView } from './views/StorageView';
 import { AuthView } from './views/AuthView';
 import { OutputView } from './views/OutputView';
+import { IntegrationsView } from './views/IntegrationsView';
 
 import './index.css';
 import './overlay.css';
@@ -286,6 +287,15 @@ function App() {
       case 'auth':
         return (
           <AuthView
+            plugins={plugins}
+            pluginSettings={pluginSettings}
+            updatePluginSetting={updatePluginSetting}
+            triggerAction={triggerAction}
+          />
+        );
+      case 'integrations':
+        return (
+          <IntegrationsView
             plugins={plugins}
             pluginSettings={pluginSettings}
             updatePluginSetting={updatePluginSetting}

@@ -27,7 +27,7 @@ export const StorageView: React.FC<StorageViewProps> = ({
   }, []);
 
   const storagePlugins = plugins.filter(
-    (p) => (p.category === 'storage' || p.category === 'general' || !p.category) && p.fields.length > 0
+    (p) => (p.category === 'storage' || !p.category) && p.fields.length > 0
   );
 
   const handleBrowse = async (path: string) => {
