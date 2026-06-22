@@ -1,4 +1,5 @@
 pub mod alerts;
+pub mod bit_triggers;
 pub mod chat;
 pub mod event_manager;
 pub mod hype_train;
@@ -6,6 +7,7 @@ pub mod models;
 pub mod websocket;
 
 pub use alerts::TwitchAlertsPlugin;
+pub use bit_triggers::TwitchBitTriggersPlugin;
 pub use chat::TwitchChatPlugin;
 pub use event_manager::TwitchEventManager;
 pub use hype_train::TwitchHypeTrainPlugin;

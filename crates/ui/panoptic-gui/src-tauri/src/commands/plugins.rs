@@ -41,14 +41,15 @@ pub fn set_plugin_settings(
     new_settings: serde_json::Value,
 ) -> Result<(), String> {
     let mut settings = AppSettings::load(&app);
-    settings.plugins.insert(plugin_id, new_settings);
-    settings.save(&app)
+    settings.plugins.insert(plugin_id.clone(), new_settings);
+    settings.save(&app)?;
+    use tauri::Emitter;
+    let _ = app.emit("plugin_settings_updated", plugin_id);
+    Ok(())
 }
 
 #[tauri::command]
-pub fn get_obs_status(
-    state: tauri::State<Arc<std::sync::Mutex<ObsStatus>>>,
-) -> ObsStatus {
+pub fn get_obs_status(state: tauri::State<Arc<std::sync::Mutex<ObsStatus>>>) -> ObsStatus {
     state.lock().unwrap().clone()
 }
 

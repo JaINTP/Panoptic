@@ -41,7 +41,11 @@ pub struct ObsStatus {
 pub enum ObsRequest {
     SwitchScene(String),
     ToggleMute(String),
-    SetSceneItemEnabled { scene: String, item_id: i64, enabled: bool },
+    SetSceneItemEnabled {
+        scene: String,
+        item_id: i64,
+        enabled: bool,
+    },
 }
 
 // ── Plugin struct ─────────────────────────────────────────────────────────────
@@ -263,7 +267,10 @@ async fn run_connection_loop(
     mut req_rx: mpsc::Receiver<ObsRequest>,
     mut stop_rx: tokio::sync::oneshot::Receiver<()>,
 ) {
-    info!("OBS WebSocket: connection loop started for {}:{}", host, port);
+    info!(
+        "OBS WebSocket: connection loop started for {}:{}",
+        host, port
+    );
 
     loop {
         let url = format!("ws://{}:{}", host, port);
@@ -272,12 +279,7 @@ async fn run_connection_loop(
             break;
         }
 
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(5),
-            connect_async(&url),
-        )
-        .await
-        {
+        match tokio::time::timeout(std::time::Duration::from_secs(5), connect_async(&url)).await {
             Ok(Ok((ws_stream, _))) => {
                 info!("OBS WebSocket: connected to {}", url);
                 let (mut write, mut read) = ws_stream.split();
@@ -452,7 +454,11 @@ fn handle_event(
         }
         "InputCreated" => {
             // New input added to OBS - refresh the full input list
-            to_send.push(build_request("GetInputList", "get_inputs", serde_json::json!({})));
+            to_send.push(build_request(
+                "GetInputList",
+                "get_inputs",
+                serde_json::json!({}),
+            ));
         }
         "InputRemoved" => {
             let name = data["inputName"].as_str().unwrap_or("").to_string();
@@ -563,7 +569,12 @@ fn handle_response(
         "toggle_mute" if ok => {
             // ToggleInputMute succeeded - the InputMuteStateChanged event will update state
         }
-        id if !ok && matches!(id, "switch_scene" | "toggle_mute" | "set_scene_item_enabled") => {
+        id if !ok
+            && matches!(
+                id,
+                "switch_scene" | "toggle_mute" | "set_scene_item_enabled"
+            ) =>
+        {
             let msg = d["requestStatus"]["comment"]
                 .as_str()
                 .unwrap_or("unknown error");
@@ -631,7 +642,7 @@ where
 {
     use tauri::Emitter;
     if let Ok(mut lock) = status.lock() {
-        f(&mut *lock);
+        f(&mut lock);
         let snapshot = lock.clone();
         drop(lock);
         let _ = app.emit("obs_status", snapshot);

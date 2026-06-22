@@ -314,6 +314,7 @@ pub async fn handle_event(
                     message: event["message"].as_str().unwrap_or_default().to_string(),
                 },
             );
+            process_bit_triggers(app, bits);
         }
         "channel.channel_points_custom_reward_redemption.add" => {
             {
@@ -482,4 +483,65 @@ pub fn update_alert(
         state.active_alerts.remove(0);
     }
     let _ = app.emit("twitch_alert", state.clone());
+}
+
+pub fn process_bit_triggers(app: &tauri::AppHandle, bits: u64) {
+    use crate::engine::settings::AppSettings;
+    let settings = AppSettings::load(app);
+    let plugin_cfg = settings.plugins.get("twitch_bit_triggers");
+
+    let enabled = plugin_cfg
+        .and_then(|v| v.get("enable"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    if !enabled {
+        return;
+    }
+
+    let glow_threshold = plugin_cfg
+        .and_then(|v| v.get("glow_threshold"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(100);
+
+    let glitch_threshold = plugin_cfg
+        .and_then(|v| v.get("glitch_threshold"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(500);
+
+    let chaos_threshold = plugin_cfg
+        .and_then(|v| v.get("chaos_threshold"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(1000);
+
+    use tauri::Manager;
+    if let Some(effects) = app.try_state::<panoptic_core::ThematicEffects>() {
+        let mut active = effects.active.lock().unwrap();
+        let now = std::time::Instant::now();
+        use tauri::Emitter;
+
+        if bits >= chaos_threshold {
+            let duration = std::time::Duration::from_secs(10);
+            active.insert("glow".to_string(), now + duration);
+            active.insert("glitch".to_string(), now + duration);
+            let _ = app.emit(
+                "visual_effect_trigger",
+                serde_json::json!({ "effect": "chaos", "duration": 10 }),
+            );
+        } else if bits >= glitch_threshold {
+            let duration = std::time::Duration::from_secs(5);
+            active.insert("glitch".to_string(), now + duration);
+            let _ = app.emit(
+                "visual_effect_trigger",
+                serde_json::json!({ "effect": "glitch", "duration": 5 }),
+            );
+        } else if bits >= glow_threshold {
+            let duration = std::time::Duration::from_secs(5);
+            active.insert("glow".to_string(), now + duration);
+            let _ = app.emit(
+                "visual_effect_trigger",
+                serde_json::json!({ "effect": "glow", "duration": 5 }),
+            );
+        }
+    }
 }

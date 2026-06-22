@@ -148,6 +148,27 @@
       filter: hue-rotate(90deg);
       transition: filter 0.8s ease;
     }
+    @keyframes thematic-glow {
+      0%, 100% { filter: drop-shadow(0 0 2px #ff007f) drop-shadow(0 0 4px #ff007f); }
+      50% { filter: drop-shadow(0 0 10px #ff007f) drop-shadow(0 0 20px #ff007f); }
+    }
+    @keyframes thematic-glitch {
+      0% { transform: translate(0) skew(0deg); }
+      10% { transform: translate(-2px, 1px) skew(-1deg); }
+      20% { transform: translate(1px, -1px) skew(2deg); filter: hue-rotate(90deg); }
+      30% { transform: translate(-1px, 2px) skew(0deg); }
+      40% { transform: translate(2px, -2px) skew(-2deg); filter: hue-rotate(180deg); }
+      50% { transform: translate(0) skew(0deg); }
+    }
+    body.effect-glow {
+      animation: thematic-glow 1s ease infinite alternate;
+    }
+    body.effect-glitch {
+      animation: thematic-glitch 0.3s steps(2) infinite;
+    }
+    body.effect-chaos {
+      animation: thematic-glow 1s ease infinite alternate, thematic-glitch 0.3s steps(2) infinite;
+    }
   </style>
 </head>
 <body>

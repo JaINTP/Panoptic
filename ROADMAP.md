@@ -21,20 +21,22 @@ A microphone-reactive indicator or character for streamers who prefer not to use
 - **Status:** Concept
 - **Key Feature:** Real-time lip-sync and movement driven by system audio amplitude.
 
-### 🌉 Discord Rich Presence Bridge
-Seamlessly sync your "Now Playing" music and current stream alerts directly to your Discord status.
-- **Status:** Concept
-- **Key Feature:** Show alert history and current track artwork in Discord.
+### ~~🌉 Discord Rich Presence Bridge~~
+~~Seamlessly sync your "Now Playing" music and current stream alerts directly to your Discord status.~~
+- ~~**Status:** Concept~~
+- ~~**Key Feature:** Show alert history and current track artwork in Discord.~~
+- **Shipped in v0.4.0:** Integrated background worker thread syncing playback state and brief Twitch alerts (follows, subs, raids, cheers) to Discord Rich Presence activity.
 
 ### 🎮 Retro Gaming ROM Fetcher
 Automatically update "Now Playing" with the metadata and box art of games running in common emulators.
 - **Status:** Concept
 - **Key Feature:** IGDB integration for high-quality artwork.
 
-### ⚡ Interactive "Bit-Triggers"
-Enable viewers to manipulate overlay visuals directly using Twitch Bits.
-- **Status:** Concept
-- **Key Feature:** "Chaos Mode" - large cheers can trigger temporary global glitch or glow effects.
+### ~~⚡ Interactive "Bit-Triggers"~~
+~~Enable viewers to manipulate overlay visuals directly using Twitch Bits.~~
+- ~~**Status:** Concept~~
+- ~~**Key Feature:** "Chaos Mode" - large cheers can trigger temporary global glitch or glow effects.~~
+- **Shipped in v0.4.0:** Twitch Cheer EventSub listener checks cheered bits against configured settings thresholds to activate glow, glitch, or chaos (both glow & glitch) visual effects on overlays.
 
 ### ~~⏲️ Pomodoro / BRB Timer~~
 ~~Themed countdown timers for focus sessions or break screens.~~

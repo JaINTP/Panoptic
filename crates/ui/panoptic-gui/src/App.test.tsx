@@ -44,7 +44,7 @@ describe('Panoptic React GUI Tests', () => {
     fireEvent.click(outputTab);
 
     // Verify Output view is displayed
-    expect(screen.getByRole('heading', { level: 1, name: 'Output Templating' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Output' })).toBeInTheDocument();
   });
 
   test('updates plugin settings on Auth panel', async () => {

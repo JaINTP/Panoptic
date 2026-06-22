@@ -6,6 +6,7 @@ pub mod engine {
     pub mod plugin_registry;
     pub mod settings;
     pub mod plugins {
+        pub mod discord_rpc;
         pub mod mpris_smtc;
         pub mod obs_websocket;
         pub mod pomodoro;
@@ -85,6 +86,12 @@ pub fn run() {
         .register(Box::new(obs_plugin))
         .register(Box::new(
             crate::engine::plugins::pomodoro::PomodoroPlugin::new(),
+        ))
+        .register(Box::new(
+            crate::engine::plugins::twitch_notifications::TwitchBitTriggersPlugin::new(),
+        ))
+        .register(Box::new(
+            crate::engine::plugins::discord_rpc::DiscordRpcPlugin::new(),
         ));
 
     let plugins = registry.plugins;

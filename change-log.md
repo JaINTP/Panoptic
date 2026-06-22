@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Interactive Bit Triggers:** Enabled viewers to trigger global overlay visual effects (glow, glitch, or both for chaos mode) by cheering bits in stream chat. Customizable thresholds can be defined in the settings panel.
+- **Discord Rich Presence Bridge:** Integrated the `discord-rich-presence` crate and created a background worker to dynamically update Discord statuses with "Now Playing" track details and real-time stream alert notifications.
+
 ## [0.3.9] - 2026-06-21
 
 ### Added
