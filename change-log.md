@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-06-23
+
+### Added
+
+- **Simulate Actions for Integrations:** Added interactive test buttons to simulate Twitch Cheers (Glow, Glitch, Chaos) and Discord Rich Presence alert notifications directly from the settings panel.
+
 ## [0.4.1] - 2026-06-23
 
 ### Added
