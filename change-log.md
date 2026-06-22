@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-23
+
 ### Added
 
 - **Interactive Bit Triggers:** Enabled viewers to trigger global overlay visual effects (glow, glitch, or both for chaos mode) by cheering bits in stream chat. Customizable thresholds can be defined in the settings panel.
