@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-23
+
+### Added
+
+- **Dedicated Integrations Tab:** Added a dedicated "Integrations" view tab to render general configuration options for Discord Rich Presence and Twitch Bit Triggers, keeping the "Storage" tab focused on system paths.
+
 ## [0.4.0] - 2026-06-23
 
 ### Added
