@@ -375,7 +375,56 @@ impl PanopticPlugin for DiscordRpcPlugin {
                     field_type: SettingFieldType::Boolean,
                     default_value: serde_json::json!(true),
                 },
+                SettingField {
+                    key: "action_simulate_alert".into(),
+                    label: "Test Discord Alert".into(),
+                    description: Some(
+                        "Send a test alert notification to your Discord status".into(),
+                    ),
+                    field_type: SettingFieldType::Action {
+                        button_label: "Test Alert".into(),
+                        action_name: "simulate_alert".into(),
+                    },
+                    default_value: serde_json::json!(null),
+                },
+                SettingField {
+                    key: "action_reconnect".into(),
+                    label: "Reconnect Discord RPC".into(),
+                    description: Some(
+                        "Force reload settings and attempt reconnection immediately".into(),
+                    ),
+                    field_type: SettingFieldType::Action {
+                        button_label: "Reconnect".into(),
+                        action_name: "reconnect".into(),
+                    },
+                    default_value: serde_json::json!(null),
+                },
             ],
         })
+    }
+
+    fn handle_action(
+        &self,
+        action: &str,
+        _app: &tauri::AppHandle,
+    ) -> Result<serde_json::Value, String> {
+        let tx_lock = self.tx.lock().unwrap();
+        if let Some(ref tx) = *tx_lock {
+            match action {
+                "simulate_alert" => {
+                    let _ = tx.send(DiscordRpcCommand::UpdateAlert(
+                        "Test alert from GUI!".to_string(),
+                    ));
+                    Ok(serde_json::json!({ "status": "success" }))
+                }
+                "reconnect" => {
+                    let _ = tx.send(DiscordRpcCommand::ReloadSettings);
+                    Ok(serde_json::json!({ "status": "success" }))
+                }
+                _ => Err(format!("Unknown action: {}", action)),
+            }
+        } else {
+            Err("Discord RPC worker not running".to_string())
+        }
     }
 }
