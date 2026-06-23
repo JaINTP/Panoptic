@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-06-24
+
 ### Changed
 
 - **Optimized Update Checker Frequency:** Configured the background update checker loop to calculate polling intervals dynamically based on the GitHub API's `x-ratelimit-remaining` and `x-ratelimit-reset` response headers, maximizing polling frequency (down to a minimum of 60 seconds) while leaving 1 request in reserve to prevent rate limit blocks. Refactored loop logic to use idiomatic match expressions to resolve compiler/clippy warnings.

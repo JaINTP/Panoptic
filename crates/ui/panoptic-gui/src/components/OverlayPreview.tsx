@@ -29,18 +29,23 @@ export const OverlayPreview: React.FC<OverlayPreviewProps> = ({
   formatTime,
   settings,
 }) => {
+  const artSrc = React.useMemo(() => {
+    if (!playback.art_source) {
+      return 'https://i.scdn.co/image/ab67616d0000b27370364408e063f2f0c76f4e17';
+    }
+    if (playback.art_source.startsWith('file://')) {
+      const buster = Date.now();
+      return `http://127.0.0.1:3000/art?v=${encodeURIComponent(playback.art_source)}&t=${buster}`;
+    }
+    return playback.art_source;
+  }, [playback.art_source, playback.title, playback.artist]);
+
   return (
     <div className="panoptic-overlay-wrapper" data-playing={playback.is_playing}>
       <div className="panoptic-overlay-card">
         <div className="panoptic-overlay-art-container">
           <img
-            src={
-              playback.art_source
-                ? playback.art_source.startsWith('file://')
-                  ? `http://127.0.0.1:3000/art?v=${encodeURIComponent(playback.art_source)}`
-                  : playback.art_source
-                : 'https://i.scdn.co/image/ab67616d0000b27370364408e063f2f0c76f4e17'
-            }
+            src={artSrc}
             alt="Album Art"
             className="panoptic-overlay-album-art"
           />

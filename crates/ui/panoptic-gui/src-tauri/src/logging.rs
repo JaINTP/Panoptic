@@ -3,17 +3,19 @@ use tracing::info;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 pub fn init_logging(app_handle: &tauri::AppHandle) -> Result<(), String> {
-    let log_dir = app_handle
+    let mut log_dir = app_handle
         .path()
         .app_config_dir()
         .map_err(|e| format!("Failed to get config dir: {}", e))?;
+
+    log_dir.push("logs");
 
     if !log_dir.exists() {
         std::fs::create_dir_all(&log_dir)
             .map_err(|e| format!("Failed to create log dir: {}", e))?;
     }
 
-    let file_appender = tracing_appender::rolling::never(log_dir.clone(), "error.log");
+    let file_appender = tracing_appender::rolling::daily(log_dir.clone(), "panoptic.log");
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
     Box::leak(Box::new(guard));

@@ -89,7 +89,7 @@ export const StorageView: React.FC<StorageViewProps> = ({
             </div>
           </div>
 
-          <div className="row">
+          <div className="row" style={{ marginBottom: '16px' }}>
             <div className="label-container" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div className="label">Config Directory</div>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -110,6 +110,31 @@ export const StorageView: React.FC<StorageViewProps> = ({
                 disabled={!paths?.config_dir}
               >
                 Browse...
+              </button>
+            </div>
+          </div>
+
+          <div className="row">
+            <div className="label-container" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div className="label">Application Logs</div>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                Extensive daily debugging logs are saved here. Click Open Log Folder to access them.
+              </span>
+            </div>
+            <div className="input-group" style={{ flex: 1, justifyContent: 'flex-end' }}>
+              <input
+                type="text"
+                readOnly
+                value={paths?.log_dir ?? 'Loading...'}
+                style={{ width: '260px' }}
+              />
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => paths?.log_dir && handleBrowse(paths.log_dir)}
+                disabled={!paths?.log_dir}
+              >
+                Open Log Folder
               </button>
             </div>
           </div>

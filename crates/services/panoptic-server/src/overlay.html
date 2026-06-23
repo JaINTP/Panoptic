@@ -126,13 +126,18 @@
       wrapper.setAttribute('data-playing', state.is_playing ? 'true' : 'false');
       
       if (state.art_source) {
-        if (art.dataset.artSrc !== state.art_source) {
-          art.dataset.artSrc = state.art_source;
-          art.src = '/art?v=' + encodeURIComponent(state.art_source) + '&t=' + Date.now();
+        const artKey = state.art_source + '|' + state.title + '|' + state.artist;
+        if (art.dataset.artKey !== artKey) {
+          art.dataset.artKey = artKey;
+          if (state.art_source.startsWith('http://') || state.art_source.startsWith('https://') || state.art_source.startsWith('data:')) {
+            art.src = state.art_source;
+          } else {
+            art.src = '/art?v=' + encodeURIComponent(state.art_source) + '&t=' + Date.now();
+          }
         }
         art.style.display = 'block';
       } else {
-        art.dataset.artSrc = '';
+        art.dataset.artKey = '';
         art.style.display = 'none';
       }
 

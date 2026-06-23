@@ -60,9 +60,19 @@ pub fn get_storage_paths(app: tauri::AppHandle) -> serde_json::Value {
         })
         .unwrap_or_default();
 
+    let log_dir = app
+        .path()
+        .app_config_dir()
+        .map(|mut p| {
+            p.push("logs");
+            p.to_string_lossy().to_string()
+        })
+        .unwrap_or_default();
+
     serde_json::json!({
         "config_dir": config_dir,
         "artwork_dir": artwork_dir,
+        "log_dir": log_dir,
     })
 }
 
