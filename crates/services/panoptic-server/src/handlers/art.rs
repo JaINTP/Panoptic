@@ -38,7 +38,15 @@ pub async fn get_art(State(state): State<AppState>, Query(params): Query<ArtQuer
                 let mime = mime_guess::from_path(&fs_path)
                     .first_or_octet_stream()
                     .to_string();
-                (StatusCode::OK, [(header::CONTENT_TYPE, mime)], bytes).into_response()
+                (
+                    StatusCode::OK,
+                    [
+                        (header::CONTENT_TYPE, mime),
+                        (header::CACHE_CONTROL, "no-store".to_string()),
+                    ],
+                    bytes,
+                )
+                    .into_response()
             }
             Err(_) => StatusCode::NOT_FOUND.into_response(),
         }
@@ -54,7 +62,10 @@ pub async fn get_art(State(state): State<AppState>, Query(params): Query<ArtQuer
                 match resp.bytes().await {
                     Ok(bytes) => (
                         StatusCode::OK,
-                        [(header::CONTENT_TYPE, content_type)],
+                        [
+                            (header::CONTENT_TYPE, content_type),
+                            (header::CACHE_CONTROL, "no-store".to_string()),
+                        ],
                         bytes.to_vec(),
                     )
                         .into_response(),
