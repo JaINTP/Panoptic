@@ -143,6 +143,23 @@ impl PanopticPlugin for TwitchAlertsPlugin {
                     default_value: serde_json::json!(false),
                 },
                 SettingField {
+                    key: "extend_downwards".into(),
+                    label: "Extend Downwards".into(),
+                    description: Some("Extend/stack alerts downwards instead of upwards".into()),
+                    field_type: SettingFieldType::Boolean,
+                    default_value: serde_json::json!(false),
+                },
+                SettingField {
+                    key: "alert_limit".into(),
+                    label: "Alert Limit".into(),
+                    description: Some(
+                        "Maximum number of alerts displayed simultaneously (0 for unlimited)"
+                            .into(),
+                    ),
+                    field_type: SettingFieldType::Number,
+                    default_value: serde_json::json!(4),
+                },
+                SettingField {
                     key: "test_alerts".into(),
                     label: "Test Simulation".into(),
                     description: None,

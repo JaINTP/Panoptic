@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-06-24
+
+### Added
+- **Twitch Alert Overlay Extend Downwards & Limit**: Added a settings toggle (`extend_downwards`) to stack active alerts downwards from the top right instead of upwards from the bottom right. Also added a configurable `alert_limit` (defaulting to 4, 0 for unlimited) to restrict the maximum number of simultaneous visible alerts on screen.
+
 ## [0.4.5] - 2026-06-24
 
 ### Changed

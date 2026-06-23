@@ -10,9 +10,16 @@
   --ht-font-family: 'Orbitron', sans-serif;
   
   --container-bottom: 20px;
+  --container-top: auto;
   --container-right: 20px;
   --stack-direction: column-reverse;
   --stack-gap: 12px;
+}
+
+body.extend-downwards {
+  --stack-direction: column;
+  --container-top: 20px;
+  --container-bottom: auto;
 }
 
 /* ── Alert Stack Container ───────────────────────────────────── */

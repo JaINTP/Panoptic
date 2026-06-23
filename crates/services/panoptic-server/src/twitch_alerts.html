@@ -11,11 +11,17 @@
     #overlay-container {
       position: fixed;
       bottom: var(--container-bottom, 20px);
+      top: var(--container-top, auto);
       right: var(--container-right, 20px);
       display: flex;
       flex-direction: var(--stack-direction, column-reverse);
       gap: var(--stack-gap, 12px);
       pointer-events: none;
+    }
+    body.extend-downwards {
+      --stack-direction: column;
+      --container-top: 20px;
+      --container-bottom: auto;
     }
     
     /* Default Hidden logic if not handled by CSS */
@@ -124,6 +130,12 @@
       
       window.AlertSettings = settings;
 
+      if (settings?.extend_downwards) {
+        document.body.classList.add('extend-downwards');
+      } else {
+        document.body.classList.remove('extend-downwards');
+      }
+
       // If we have new alerts, and we were keeping the last one, 
       // see if any 'expired' but 'kept' alerts should now be removed.
       if (activeAlerts.some(a => !activeAlertIds.has(a.id))) {
@@ -147,6 +159,15 @@
 
     function spawnAlert(queued, settings) {
       const container = document.getElementById('overlay-container');
+      
+      const limit = settings?.alert_limit !== undefined ? Number(settings.alert_limit) : 4;
+      if (limit > 0) {
+        while (alertQueue.length >= limit) {
+          const oldestId = alertQueue[0];
+          removeAlert(oldestId);
+        }
+      }
+
       activeAlertIds.add(queued.id);
       alertQueue.push(queued.id);
 
