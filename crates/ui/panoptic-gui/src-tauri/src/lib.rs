@@ -6,6 +6,7 @@ pub mod engine {
     pub mod plugin_registry;
     pub mod settings;
     pub mod plugins {
+        pub mod avatar;
         pub mod discord_rpc;
         pub mod mpris_smtc;
         pub mod obs_websocket;
@@ -92,7 +93,8 @@ pub fn run() {
         ))
         .register(Box::new(
             crate::engine::plugins::discord_rpc::DiscordRpcPlugin::new(),
-        ));
+        ))
+        .register(Box::new(crate::engine::plugins::avatar::AvatarPlugin::new()));
 
     let plugins = registry.plugins;
     let auth_tx_for_app = auth_tx.clone();

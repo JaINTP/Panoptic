@@ -175,7 +175,7 @@ impl PanopticPlugin for TwitchPlugin {
                     );
                 }
 
-                let redirect_uri = "http://127.0.0.1:3000/callback/twitch";
+                let redirect_uri = "http://localhost:3000/callback/twitch";
                 let encoded_redirect = urlencoding::encode(redirect_uri);
                 let url = format!(
                     "https://id.twitch.tv/oauth2/authorize?client_id={}&response_type=token&redirect_uri={}&scope=user:read:email+chat:read+chat:edit+channel:read:hype_train+user:read:chat+channel:read:subscriptions+moderator:read:followers+bits:read",

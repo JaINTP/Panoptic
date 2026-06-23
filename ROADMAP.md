@@ -16,10 +16,12 @@ Extend the live chat overlay with cross-plugin visual reactivity.
 - ~~**Key Feature:** Multi-Stage Goals - reaching a milestone can automatically trigger a theme swap.~~
 - **Shipped in v0.3.0:** Live follower, subscriber, and cheer progress bars driven by Twitch EventSub. Configurable targets, session tracking, custom variable template interpolation, and a session reset button in the settings panel.
 
-### 🎙️ "Talk-Back" Avatar Visualizer
-A microphone-reactive indicator or character for streamers who prefer not to use a face-cam.
-- **Status:** Concept
-- **Key Feature:** Real-time lip-sync and movement driven by system audio amplitude.
+### ~~🎙️ "Talk-Back" Avatar Visualizer~~
+~~A microphone-reactive indicator or character for streamers who prefer not to use a face-cam.~~
+- ~~**Status:** Concept~~
+- ~~**Key Feature:** Real-time lip-sync and movement driven by system audio amplitude.~~
+- **Shipped:** Real-time microphone-reactive talk-back overlay served at `/overlay/avatar` with dynamic frequency amplitude processing, speaking thresholds, and bounce/scale/lip-sync mouth animation styles.
+
 
 ### ~~🌉 Discord Rich Presence Bridge~~
 ~~Seamlessly sync your "Now Playing" music and current stream alerts directly to your Discord status.~~

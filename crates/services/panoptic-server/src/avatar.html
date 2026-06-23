@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Panoptic Talk-Back Avatar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link id="overlay-style" rel="stylesheet" href="/overlay/avatar/style.css">
+
+  <style>
+    body {
+      background-color: transparent;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .avatar-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease-out;
+    }
+
+    /* Built-in Robot Mascot styling */
+    .robot-svg {
+      width: 200px;
+      height: 200px;
+      transition: filter 0.2s ease, fill 0.2s ease;
+    }
+
+    .robot-head {
+      fill: var(--avatar-color, #8b5cf6);
+      stroke: #1e1b4b;
+      stroke-width: 6;
+      rx: 35;
+      ry: 35;
+      transition: fill 0.2s ease;
+    }
+
+    .robot-eye {
+      fill: #ffffff;
+      transition: transform 0.1s ease;
+    }
+
+    .robot-eye-pupil {
+      fill: #1e1b4b;
+    }
+
+    .robot-mouth {
+      fill: #1e1b4b;
+      rx: 5;
+      ry: 5;
+      transform-origin: 100px 135px;
+      transition: transform 0.05s ease-out;
+    }
+
+    /* Custom Image layout */
+    .custom-avatar-img {
+      max-width: 250px;
+      max-height: 250px;
+      object-fit: contain;
+      border-radius: 12px;
+      display: none;
+      transition: filter 0.2s ease;
+    }
+
+    /* Status alerts */
+    #mic-status {
+      display: none;
+      position: absolute;
+      background: rgba(224, 85, 85, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid #ef4444;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    .speaking-glow {
+      filter: drop-shadow(0 0 12px var(--speaking-color, #ff007f));
+    }
+  </style>
+</head>
+<body>
+
+  <div id="mic-status">
+    🎤 Microphone Access Required.<br>Please allow access in your browser source properties.
+  </div>
+
+  <div class="avatar-container" id="avatar-root">
+    <!-- Built-in robot mascot -->
+    <svg id="default-robot" class="robot-svg" viewBox="0 0 200 200">
+      <!-- Ears/Antennae -->
+      <rect x="25" y="80" width="12" height="40" rx="4" fill="#1e1b4b" />
+      <rect x="163" y="80" width="12" height="40" rx="4" fill="#1e1b4b" />
+      <circle cx="100" cy="35" r="10" fill="#1e1b4b" />
+      <line x1="100" y1="35" x2="100" y2="60" stroke="#1e1b4b" stroke-width="6" />
+
+      <!-- Head Base -->
+      <rect class="robot-head" x="35" y="55" width="130" height="110" />
+
+      <!-- Eyes -->
+      <circle class="robot-eye" cx="75" cy="100" r="16" />
+      <circle class="robot-eye-pupil" cx="75" cy="100" r="6" id="left-pupil" />
+      <circle class="robot-eye" cx="125" cy="100" r="16" />
+      <circle class="robot-eye-pupil" cx="125" cy="100" r="6" id="right-pupil" />
+
+      <!-- Mouth -->
+      <rect class="robot-mouth" id="robot-mouth-elem" x="75" y="130" width="50" height="10" />
+    </svg>
+
+    <!-- Custom image (rendered if URL provided) -->
+    <img id="custom-image" class="custom-avatar-img" src="" alt="Avatar">
+  </div>
+
+  <script>
+    let settings = {
+      enable: true,
+      sensitivity: 1.5,
+      speaking_threshold: 10,
+      bounce_height: 20,
+      avatar_style: "Bounce",
+      avatar_color: "#8b5cf6",
+      speaking_color: "#ff007f",
+      custom_image_url: ""
+    };
+
+    // Apply colors and settings dynamically
+    function applySettings() {
+      const root = document.documentElement;
+      root.style.setProperty('--avatar-color', settings.avatar_color);
+      root.style.setProperty('--speaking-color', settings.speaking_color);
+
+      const robot = document.getElementById('default-robot');
+      const customImg = document.getElementById('custom-image');
+
+      if (settings.custom_image_url && settings.custom_image_url.trim() !== "") {
+        robot.style.display = 'none';
+        customImg.style.display = 'block';
+        if (customImg.src !== settings.custom_image_url) {
+          customImg.src = settings.custom_image_url;
+        }
+      } else {
+        robot.style.display = 'block';
+        customImg.style.display = 'none';
+      }
+
+      if (!settings.enable) {
+        document.body.style.opacity = '0.3';
+      } else {
+        document.body.style.opacity = '1';
+      }
+    }
+
+    async function fetchSettings() {
+      try {
+        const res = await fetch('/avatar/settings');
+        if (res.ok) {
+          settings = await res.json();
+          applySettings();
+        }
+      } catch (err) {
+        console.error("Failed to fetch avatar settings:", err);
+      }
+    }
+
+    // Periodically sync settings
+    setInterval(fetchSettings, 2000);
+    fetchSettings();
+
+    // Setup Web Audio API
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        
+        analyser.fftSize = 128;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const avatarRoot = document.getElementById('avatar-root');
+        const robotMouth = document.getElementById('robot-mouth-elem');
+        const defaultRobot = document.getElementById('default-robot');
+        const customImg = document.getElementById('custom-image');
+        const leftPupil = document.getElementById('left-pupil');
+        const rightPupil = document.getElementById('right-pupil');
+
+        function draw() {
+          requestAnimationFrame(draw);
+          
+          if (!settings.enable) {
+            avatarRoot.style.transform = 'none';
+            defaultRobot.classList.remove('speaking-glow');
+            customImg.classList.remove('speaking-glow');
+            return;
+          }
+
+          analyser.getByteFrequencyData(dataArray);
+
+          // Get average amplitude
+          let sum = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / bufferLength; // 0 to 255
+          
+          // Amplified volume check
+          const volume = average * settings.sensitivity;
+
+          if (volume > settings.speaking_threshold) {
+            // Speaking state
+            defaultRobot.classList.add('speaking-glow');
+            customImg.classList.add('speaking-glow');
+
+            const intensity = Math.min((volume - settings.speaking_threshold) / 100, 1.0);
+
+            if (settings.avatar_style === "Bounce") {
+              const bounce = intensity * settings.bounce_height;
+              avatarRoot.style.transform = `translateY(-${bounce}px)`;
+              // reset mouth and pupils
+              robotMouth.style.transform = 'none';
+              leftPupil.setAttribute('cy', '100');
+              rightPupil.setAttribute('cy', '100');
+            } else if (settings.avatar_style === "Scale") {
+              const scale = 1.0 + (intensity * 0.15);
+              avatarRoot.style.transform = `scale(${scale})`;
+              robotMouth.style.transform = 'none';
+            } else if (settings.avatar_style === "Mouth-Open") {
+              // Open mouth animation for vector robot
+              const mouthOpenScale = 1.0 + (intensity * 3.5);
+              robotMouth.style.transform = `scaleY(${mouthOpenScale})`;
+              avatarRoot.style.transform = 'none';
+              // Move pupils up a bit
+              leftPupil.setAttribute('cy', '96');
+              rightPupil.setAttribute('cy', '96');
+            }
+          } else {
+            // Idle state
+            defaultRobot.classList.remove('speaking-glow');
+            customImg.classList.remove('speaking-glow');
+            avatarRoot.style.transform = 'none';
+            robotMouth.style.transform = 'none';
+            leftPupil.setAttribute('cy', '100');
+            rightPupil.setAttribute('cy', '100');
+          }
+        }
+
+        draw();
+      })
+      .catch(err => {
+        console.error("Microphone access denied:", err);
+        document.getElementById('mic-status').style.display = 'block';
+      });
+  </script>
+</body>
+</html>
