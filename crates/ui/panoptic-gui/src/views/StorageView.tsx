@@ -12,6 +12,7 @@ interface StorageViewProps {
 interface StoragePaths {
   config_dir: string;
   artwork_dir: string;
+  log_dir: string;
 }
 
 export const StorageView: React.FC<StorageViewProps> = ({

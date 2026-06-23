@@ -1,6 +1,6 @@
 # Maintainer: jaintp <dev@jaintp.com>
 pkgname=panoptic
-pkgver=0.1.8
+pkgver=0.4.5
 pkgrel=1
 pkgdesc="A modular, cross-platform streaming toolkit for overlays, data bridges, and live integrations"
 arch=('x86_64')
@@ -24,7 +24,7 @@ makedepends=(
     'pkg-config'
     'git'
 )
-source=("${pkgname}::git+file://$(git rev-parse --show-toplevel)")
+source=("${pkgname}::git+${url}.git#tag=v${pkgver}")
 sha256sums=('SKIP')
 
 prepare() {
