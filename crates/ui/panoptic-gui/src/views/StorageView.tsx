@@ -40,6 +40,22 @@ export const StorageView: React.FC<StorageViewProps> = ({
     }
   };
 
+  const [copyStatus, setCopyStatus] = useState('Copy Logs');
+
+  const handleCopyLogs = async () => {
+    try {
+      setCopyStatus('Copying...');
+      const logContent = await invoke<string>('get_today_log_content');
+      await navigator.clipboard.writeText(logContent);
+      setCopyStatus('Copied!');
+      setTimeout(() => setCopyStatus('Copy Logs'), 2000);
+    } catch (e) {
+      console.error('Failed to copy logs:', e);
+      setCopyStatus('Failed to Copy');
+      setTimeout(() => setCopyStatus('Copy Logs'), 2000);
+    }
+  };
+
   return (
     <div className="view-pane view-pane-scrollable">
       <h1 className="view-title">Storage & Environment</h1>
@@ -136,6 +152,14 @@ export const StorageView: React.FC<StorageViewProps> = ({
                 disabled={!paths?.log_dir}
               >
                 Open Log Folder
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleCopyLogs}
+                disabled={!paths?.log_dir}
+              >
+                {copyStatus}
               </button>
             </div>
           </div>

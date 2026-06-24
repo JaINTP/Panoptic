@@ -93,8 +93,9 @@ pub fn open_directory(app: tauri::AppHandle, path: String) -> Result<(), String>
         // avoiding incorrect MIME associations (like opening a console) and QDBusErrors
         // associated with direct process spawning of Dolphin.
         let uri = format!("file://{}", path_buf.to_string_lossy());
-        if std::process::Command::new("dbus-send")
+        if let Ok(status) = std::process::Command::new("dbus-send")
             .args([
+                "--print-reply=literal",
                 "--session",
                 "--dest=org.freedesktop.FileManager1",
                 "/org/freedesktop/FileManager1",
@@ -102,10 +103,11 @@ pub fn open_directory(app: tauri::AppHandle, path: String) -> Result<(), String>
                 &format!("array:string:{}", uri),
                 "string:",
             ])
-            .spawn()
-            .is_ok()
+            .status()
         {
-            return Ok(());
+            if status.success() {
+                return Ok(());
+            }
         }
     }
 
@@ -114,4 +116,48 @@ pub fn open_directory(app: tauri::AppHandle, path: String) -> Result<(), String>
     app.opener()
         .open_path(path, None::<&str>)
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_today_log_content(app: tauri::AppHandle) -> Result<String, String> {
+    let mut log_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|e| format!("Failed to get config dir: {}", e))?;
+    log_dir.push("logs");
+
+    if !log_dir.exists() {
+        return Err("No logs directory found".to_string());
+    }
+
+    let mut entries = std::fs::read_dir(log_dir)
+        .map_err(|e| format!("Failed to read logs directory: {}", e))?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("panoptic.log")
+        })
+        .collect::<Vec<_>>();
+
+    // Sort entries by modification time (latest first)
+    entries.sort_by(|a, b| {
+        let a_time = a
+            .metadata()
+            .and_then(|m| m.modified())
+            .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        let b_time = b
+            .metadata()
+            .and_then(|m| m.modified())
+            .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        b_time.cmp(&a_time)
+    });
+
+    if let Some(latest_entry) = entries.first() {
+        std::fs::read_to_string(latest_entry.path())
+            .map_err(|e| format!("Failed to read log file: {}", e))
+    } else {
+        Err("No log files found".to_string())
+    }
 }

@@ -30,7 +30,7 @@ use crate::commands::plugins::{
 };
 use crate::commands::settings::{
     get_app_version, get_not_playing_settings, get_output_template, get_storage_paths,
-    open_directory, set_not_playing_settings, set_output_template,
+    get_today_log_content, open_directory, set_not_playing_settings, set_output_template,
 };
 use crate::commands::stream_goals::{
     get_session_stats, get_stream_goals_config, reset_stream_goals_session, save_custom_vars,
@@ -137,6 +137,7 @@ pub fn run() {
             get_app_version,
             get_storage_paths,
             open_directory,
+            get_today_log_content,
             get_obs_status,
             // Stream Goals commands
             get_session_stats,

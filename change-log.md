@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-06-25
+
+### Added
+- **Storage View Log Copy**: Added a "Copy Logs" button in the storage settings to fetch and copy the current daily logs directly to the system clipboard.
+- **Improved Directory Opener**: Updated the Linux D-Bus folder opener command to run synchronously and verify exit status, correctly falling back to `tauri-plugin-opener` upon failure.
+
 ## [0.4.6] - 2026-06-24
 
 ### Added
